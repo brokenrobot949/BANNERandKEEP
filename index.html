@@ -149,6 +149,11 @@ button{font-family:var(--sans)}
 .qtype.t-warfront{color:var(--crimson);border-color:var(--crimson);
   box-shadow:0 0 8px rgba(163,52,45,.3)}
 .qtype.t-raid{color:#fff;background:var(--crimson);border-color:var(--crimson)}
+/* The largest thing in the game, and the only one that undoes a rival's hold:
+   gold on crimson, so it never reads as one more entry on the board. */
+.qtype.t-reclaim{color:var(--t4);background:rgba(163,52,45,.35);border-color:var(--t4);
+  box-shadow:0 0 10px rgba(224,185,63,.25)}
+.quest.reclaim{border-color:var(--t4);background:rgba(224,185,63,.05)}
 .quest.raid{border-color:var(--crimson);background:rgba(163,52,45,.08)}
 
 /* zone events */
@@ -233,6 +238,11 @@ button{font-family:var(--sans)}
 /* Marks are permanent, so they read differently from traits: earned, not chosen. */
 .chip.mark{border-color:var(--crimson-dim);color:#c98a72;background:rgba(163,52,45,.10)}
 .mark-tally{color:#c98a72;font-weight:600}
+.xp-tally{color:var(--azure)}
+.gear-tally{color:var(--azure);display:inline-flex;align-items:center;gap:3px}
+.levelup{font-family:var(--sans);font-size:11.5px;color:var(--t4);margin-top:6px;
+  border-left:2px solid var(--t4);padding-left:8px}
+.levelup b{color:var(--t4)}
 .trait.mark{border-color:var(--crimson-dim);background:rgba(163,52,45,.07)}
 .trait.mark b{color:#c98a72}
 
@@ -259,8 +269,24 @@ button{font-family:var(--sans)}
 .trait b{font-size:13.5px}
 .trait p{margin:3px 0 0;font-size:12.5px;color:var(--muted);line-height:1.45;font-family:var(--sans)}
 .gearslots{display:flex;gap:6px}
-.gearslot{flex:1;border:1px dashed var(--line2);border-radius:4px;padding:7px 4px;text-align:center;
-  font-family:var(--sans);font-size:10.5px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+.gearslot{flex:1;min-width:0;border:1px dashed var(--line2);border-radius:4px;padding:6px 5px;
+  text-align:center;font-family:var(--sans);font-size:10.5px;color:var(--dim)}
+.gearslot i{display:block;font-style:normal;letter-spacing:.06em;text-transform:uppercase;
+  font-size:9.5px;color:var(--dim)}
+.gearslot b{display:block;font-size:11px;font-weight:600;color:var(--ink);margin-top:2px;
+  overflow-wrap:anywhere}
+.gearslot.filled{border-style:solid;border-color:var(--azure);cursor:pointer}
+.gearslot.filled:hover{background:rgba(74,125,138,.10)}
+.shelf{display:flex;flex-wrap:wrap;gap:5px}
+.shelfitem{text-align:left;line-height:1.25}
+.shelfitem span{display:block;font-size:10px;color:var(--muted);letter-spacing:.05em;
+  text-transform:uppercase}
+.gearrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.gearrow:last-child{border-bottom:0}
+.gearrow .gi{flex:1;min-width:0}
+.gearrow .gi b{display:block;font-size:13.5px}
+.gearrow .gi span{display:block;text-transform:capitalize}
+.gearrow .ga{display:flex;gap:5px;flex:none}
 
 /* buildings */
 .build .lvl{margin-left:auto;font-family:var(--sans);font-size:11px;color:var(--muted);white-space:nowrap}
@@ -741,8 +767,61 @@ const CONFIG = {
     warfront: { name:"Warfront", stat:"muster", min:4, max:5, lengths:["long"],
       perHero:24, influenceMult:1,    goldMult:2.5, materialMult:2,
       injuryMult:1.4,  weight:6,  minTier:3, charter:1, warfrontInfluence:true,
-      blurb:"Open confrontation with the rival. Yields a Charter and a great deal of standing." }
+      blurb:"Open confrontation with the rival. Yields a Charter and a great deal of standing." },
+    // Weight 0: Reclaim is never rolled onto an ordinary slate. It is offered
+    // only where the rival has nearly taken a region, by rivalGated below, so
+    // it cannot be gated on standing the way every other type is -- a zone
+    // about to fall is exactly the one with no standing left.
+    // influenceMult is deliberately BELOW a Warfront's. Measured at 1.5 a won
+    // campaign carried a fallen zone from 22 straight to 100 -- it broke the
+    // hold and handed over Sovereign standing in the same afternoon, which
+    // makes losing a region strictly better than never losing it. The rival
+    // reset IS the payoff; the standing still has to be rebuilt.
+    reclaim: { name:"Reclaim", stat:"muster", min:4, max:5, lengths:["long"],
+      perHero:20, influenceMult:0.8,  goldMult:2,   materialMult:2,
+      injuryMult:1.3,  weight:0,  minTier:0, rivalGated:true, warfrontInfluence:true,
+      blurb:"A campaign to break the rival's hold and take the ground back." }
   },
+  /* Reclaim (§4, §6): the way back from a rival lock ------------------------
+     §4 gives a locked zone no slate at all and makes Reclaim the only route
+     out. That was written before §14 chose to ship the lock as a soft penalty,
+     and Open Decision #1 took the softer reading precisely BECAUSE Reclaim was
+     deferred and a hard lock would have stranded a zone forever.
+
+     Now that Reclaim exists, the soft penalty stays and Reclaim is added
+     alongside it. A locked zone keeps its penalised slate AND offers the
+     campaign, so the player can grind at a loss or pay to fix it properly. That
+     is strictly more forgiving than §4, it keeps §6's "weakened, never
+     forbidden" principle intact across the whole game rather than carving out
+     one exception, and it preserves every balance figure already measured
+     against the soft lock. See Open Decisions #1 and #9.                      */
+  RECLAIM_RIVAL_TO: 40,         // §4's own number: success drops the rival to 40
+  RECLAIM_MIN_RIVAL_FRACTION: 0.75, // offered from 3/4 of the way to a lock
+
+  /* gear (§6, §8) ---------------------------------------------------------
+     §6 lists gear as the reward for Clear, Hunt and Delve. Effects are stated
+     here, never in the item table -- the authored table carries names and
+     flavour only, so a retune never has to touch content.                    */
+  GEAR_SLOTS: ["weapon", "armor", "trinket"],
+  GEAR_TIER_MAX: 3,
+  // What a slot does, per tier. Weapons push the stat the quest tests; armour
+  // buys survival; trinkets buy standing, which nothing else on a hero does.
+  GEAR_EFFECTS: {
+    weapon:  [null, { statMult:1.06 }, { statMult:1.13 }, { statMult:1.22 }],
+    armor:   [null, { injuryMult:0.93 }, { injuryMult:0.86 }, { injuryMult:0.78 }],
+    trinket: [null, { influenceBonus:0.05 }, { influenceBonus:0.10 }, { influenceBonus:0.17 }]
+  },
+  // Chance a quest that pays gear actually drops some, before the Forge's bonus.
+  GEAR_DROP_CHANCE: { clear: 0.16, hunt: 0.22, delve: 0.40 },
+  GEAR_DROP_DANGER_SCALE: 0.12,  // per danger step above the gentlest zone
+  GEAR_TIER2_AT_DANGER: 2,       // tier 2 needs ground at least this dangerous
+  GEAR_TIER3_AT_DANGER: 4,       // tier 3 only from the worst of it
+  GEAR_STASH_MAX: 40,            // the Vault is deferred; this is the holding line
+  GEAR_SALVAGE_MATERIAL: [0, 2, 5, 11],   // materials returned, by tier
+  GEAR_SALVAGE_GOLD: [0, 30, 90, 240],
+  GEAR_UPGRADE_GOLD: [0, 420, 1300],      // cost to go from tier N to N+1
+  GEAR_UPGRADE_MATERIAL: [0, 9, 22],
+
   DELVE_PARTIAL_INFLUENCE: 0.4, // share of influence for a Delve abandoned partway
   HUNT_COUNTER_BONUS: 1.20,     // the quarry's counter is present in the party
   HUNT_COUNTER_MISSING: 0.85,   // it is not -- weakened, never forbidden
@@ -850,6 +929,46 @@ const CONFIG = {
         { healRate:2.50, restRate:2.00, gold:3000, grain:32, bogiron:34, hardstone:24, cinderglass:18 }
       ]
     },
+    /* §8's Sanctum. Every Mark's detail page has promised this since Phase 4
+       ("the Sanctum that could lift it is deferred past v1"), which made the
+       permanence of a Mark a half-truth the game itself kept pointing at.
+
+       It owns TWO halves of one system, per §8's "each building owns a system":
+       lifting a Mark that has already been taken, and making the next one less
+       likely. The second half is deliberately not an injury reduction -- that
+       is the Infirmary's and the Warden's ground -- it acts only on the Mark
+       roll, which nothing else in the game touches. */
+    sanctum: {
+      name: "Sanctum", max: 5, start: 0,
+      blurb: "Quiet ground, and someone who knows the rites. Marks taken in the " +
+             "field can be lifted here, and fewer of them take hold at all.",
+      levels: [
+        { liftGold:0,    liftMaterial:0, markChanceMult:1.00 },
+        { liftGold:1400, liftMaterial:10, markChanceMult:1.00, gold:220, grain:7,  bogiron:5,  cinderglass:4 },
+        { liftGold:1100, liftMaterial:8,  markChanceMult:0.90, gold:520, grain:12, bogiron:9,  cinderglass:7 },
+        { liftGold:850,  liftMaterial:6,  markChanceMult:0.80, gold:1050, grain:17, bogiron:14, hardstone:9,  cinderglass:11 },
+        { liftGold:600,  liftMaterial:5,  markChanceMult:0.70, gold:1950, grain:24, bogiron:20, hardstone:14, cinderglass:16 },
+        { liftGold:400,  liftMaterial:3,  markChanceMult:0.60, gold:3300, grain:33, bogiron:28, hardstone:21, cinderglass:24 }
+      ]
+    },
+    /* §8's Forge. §6 lists gear as the reward for Clear, Hunt and Delve, so the
+       Forge is not a shop bolted on the side -- it is what those three quest
+       types have been paying into all along. It raises how often gear is found
+       and how good it can be, and it is the only place gear can be improved or
+       broken down. */
+    forge: {
+      name: "Forge", max: 5, start: 0,
+      blurb: "Coal, water and a good anvil. What comes back from the field can " +
+             "be improved here, or broken down for what it is worth.",
+      levels: [
+        { dropBonus:0.00, maxTier:1, upgrade:false, salvage:false },
+        { dropBonus:0.05, maxTier:2, upgrade:false, salvage:true,  gold:200, grain:5,  bogiron:7,  hardstone:6 },
+        { dropBonus:0.10, maxTier:2, upgrade:true,  salvage:true,  gold:480, grain:9,  bogiron:13, hardstone:11 },
+        { dropBonus:0.16, maxTier:3, upgrade:true,  salvage:true,  gold:980, grain:14, bogiron:19, hardstone:17, cinderglass:6 },
+        { dropBonus:0.22, maxTier:3, upgrade:true,  salvage:true,  gold:1850, grain:20, bogiron:27, hardstone:24, cinderglass:12 },
+        { dropBonus:0.30, maxTier:3, upgrade:true,  salvage:true,  gold:3150, grain:29, bogiron:37, hardstone:33, cinderglass:21 }
+      ]
+    },
     warRoom: {
       name: "War Room", max: 5, start: 0,
       blurb: "Maps, informants and a table to argue over. You see what a job " +
@@ -873,6 +992,23 @@ const CONFIG = {
   // Tuned against the Training Yard's actual output, not guessed: XP accrues
   // only while resting (§7 makes that the bench incentive), so at 1.35 growth
   // the Tier 2 branch was 331 hours of pure rest away and maxing took months.
+  /* XP from the work itself ------------------------------------------------
+     §7's "benching must pay" is a stated balance requirement, and the Training
+     Yard's passive XP is one of its two legs -- so quest XP is deliberately
+     rated BELOW a built Training Yard rather than beside it. Per hour, in the
+     easiest zone, the field pays 7 and a maxed Yard pays 12: resting is still
+     the faster way to a level, which is the whole point. What changes is the
+     early game, where the Yard does not exist yet and pays 0, and the hard
+     zones, where the danger multiplier lets a Delve in the Reach out-earn the
+     bench. "Influence now, or a stronger hero later?" now has a third answer:
+     dangerous work is how a hero grows fastest, and it is how they get maimed.
+     The other leg of benching -- nothing heals in the field -- is untouched,
+     and that is the one Phase 4 measured as dominant.                        */
+  QUEST_XP_PER_HOUR: 7,
+  QUEST_XP_MIN: 2,              // a ten-minute errand still teaches something
+  QUEST_XP_DANGER_SCALE: 0.35,  // per danger step above the gentlest zone
+  QUEST_XP_FAIL_MULT: 0.4,      // you learn less from a rout, but not nothing
+
   XP_PER_LEVEL: 40,
   XP_LEVEL_GROWTH: 1.18,      // each level costs this much more than the last
   LEVEL_MAX: 20,
@@ -1354,6 +1490,143 @@ const RECRUITS = [
    on -- shipping it now would be a dead constant wearing a name.
    -------------------------------------------------------------------------- */
 const TV = () => CONFIG.TRAIT_VALUES;
+/* Reclaim campaigns (DESIGN.md section 4). Authored content: names and
+   briefing lines only, verified against the same contract as every other pool
+   and re-checked on every boot by "quest pools are complete and well formed". */
+const RECLAIM_QUESTS = {
+  greenhollow: [
+    { name:"The Reckoning at Reedy Lane", flavor:"A full muster marches the toll roads to tear down every coterie post and put Greenhollow back under the Keep's colours." },
+    { name:"Burning Out the Coterie Camps", flavor:"The largest party the Keep can muster hunts the coterie camps hedgerow by hedgerow until the bandits have nowhere left to hide." },
+    { name:"The Grain Road Retaking", flavor:"Five heroes escort the grain road mile by mile, breaking every coterie toll and driving the bandits past the old boundary stones." },
+    { name:"The Fall of Coterie Hall", flavor:"The Keep marches on the manor the coteries have claimed as their own, meaning to leave nothing behind for them to come back to." },
+    { name:"Clearing the Mill Ford Road", flavor:"Every crossing between the mill and the gate is to be taken back in one push, and held long enough for the carts to move again." }
+  ],
+  marrowfen: [
+    { name:"Draining the Drowned Court", flavor:"A desperate party wades the black water to break whatever the Drowned Court has built and reclaim the fen for the living." },
+    { name:"The Causeway Offensive", flavor:"Every hero the Keep can spare fights the causeway to cut the Drowned Court off from the villages it has been draining." },
+    { name:"Silencing the Chapel Bell", flavor:"The largest party in years marches on the sunken chapel to end whatever calls itself the Drowned Court and reclaim the fen." },
+    { name:"The Black Water Push", flavor:"Five heroes press into the deep fen to break the Drowned Court claim by claim and plant the Keep's banner on solid ground again." },
+    { name:"The Long Wade to Salt Hollow", flavor:"A full company wades out to Salt Hollow to take back the causeway the Drowned Court has held since the floods." }
+  ],
+  thornmarch: [
+    { name:"The Quarry Road Offensive", flavor:"A full company marches on House Vantre's checkpoints to tear them down and put the quarry road back into honest hands." },
+    { name:"Breaking the Vantre Claim", flavor:"The Keep sends its largest party yet to contest every boundary stone House Vantre has moved and take the ridge back by force." },
+    { name:"The Siege of the Old Fort", flavor:"Five heroes retake the border fort House Vantre garrisoned and hold it long enough to remind Thornmarch whose banner flies there." },
+    { name:"Driving Out the Vantre Riders", flavor:"A desperate muster rides down every Vantre patrol on the high pass until the house has no foothold left in Thornmarch." },
+    { name:"The Breaking of Vantre Keep", flavor:"A campaign against the old hold House Vantre took first, meant to end their claim on the march for good." }
+  ],
+  ashenreach: [
+    { name:"The Cinder Gate Offensive", flavor:"The largest party the Keep can field storms the cinder gate to break the Ash-Knight hold and open the district to salvage again." },
+    { name:"Breaking the Ash-Knight Line", flavor:"Five heroes march the glass flats end to end to drive the Ash-Knights back and put the last settlements under the Keep's banner." },
+    { name:"The Burnt Chapel Retaking", flavor:"A desperate company clears the burnt chapel and the ground around it, denying the Ash-Knights the shrine raised on stolen land." },
+    { name:"The Fall of Glass Ridge", flavor:"The Keep commits everything it has to take Glass Ridge back from the Ash-Knights and hold it against whatever answers the loss." },
+    { name:"Retaking the Cinder Flats", flavor:"The whole muster walks out onto the ash to break the Ash-Knight camps one by one and stand where they stood." }
+  ]
+};
+
+/* Gear, authored per slot and tier. NAMES AND FLAVOUR ONLY -- every number is
+   in the CONFIG gear block, so rebalancing never edits this table and it never
+   needs re-verifying for balance. registerGear() indexes it by id. */
+const GEAR_RAW = {
+  weapon: {
+    1: [
+      { id:"notched-billhook", name:"Notched Billhook",
+        flavor:"A hedge-cutting tool with an edge that never quite recovered from years of daily work but still bites deep enough to matter." },
+      { id:"dead-mans-hatchet", name:"Dead Man's Hatchet",
+        flavor:"Left behind by a soldier no one buried properly, its haft cracked but the head still swings true enough to trust." },
+      { id:"bent-plough-spike", name:"Bent Plough Spike",
+        flavor:"Reforged from a broken plough tip by a smith who charged only for the metal, honest work rather than fine work." },
+      { id:"fence-post-pike", name:"Fence Post Pike",
+        flavor:"A long ash pole tipped with iron that farmers keep by the door for wolves and use on worse when it comes to that." }
+    ],
+    2: [
+      { id:"reeves-commissioned-blade", name:"Reeve's Commissioned Blade",
+        flavor:"Ordered special from a Greenhollow smith and paid for out of the tithe box, balanced for a hand that knows its business." },
+      { id:"quartermasters-cutlass", name:"Quartermaster's Cutlass",
+        flavor:"Taken off a Vantre officer who no longer needed it, the blade still carries a house crest half filed away." },
+      { id:"forge-tempered-warhammer", name:"Forge-Tempered Warhammer",
+        flavor:"Commissioned by a captain who wanted a hammer that would outlast the men swinging it and mostly got his wish." },
+      { id:"bailiffs-mace", name:"Bailiff's Mace",
+        flavor:"Carried once by a man who kept the peace across three villages until the peace stopped being enough to carry." }
+    ],
+    3: [
+      { id:"the-ashfield-line-breaker", name:"The Ashfield Line Breaker",
+        flavor:"Named for the day it held a hedgerow line against three times its own number, and somehow the line did not break." },
+      { id:"graycinders-answer", name:"Graycinder's Answer",
+        flavor:"Carried by the first hero to walk out of Graycinder alive after the ash cloud settled, and never cleaned of that grey since." },
+      { id:"the-causeway-reaper", name:"The Causeway Reaper",
+        flavor:"Swung by the rider who broke the first Drowned Court raid alone, and kept by the Keep as proof it can be done again." },
+      { id:"the-quarrymasters-legacy", name:"The Quarrymaster's Legacy",
+        flavor:"Forged from the first hardstone vein reopened after House Vantre was driven off it, and still the finest steel the quarry makes." }
+    ]
+  },
+  armor: {
+    1: [
+      { id:"patched-leather-jerkin", name:"Patched Leather Jerkin",
+        flavor:"Mended so many times that no one remembers which patch came from which fight, and it still turns most blades." },
+      { id:"millers-canvas-coat", name:"Miller's Canvas Coat",
+        flavor:"Thick enough to stop a briar-cat's claws and cheap enough that the miller never minded lending it out." },
+      { id:"scavenged-ring-mail", name:"Scavenged Ring Mail",
+        flavor:"Pulled off a dead mercenary and cut down to fit, though the rings still rust faster than anyone would like." },
+      { id:"shepherds-hide-cloak", name:"Shepherd's Hide Cloak",
+        flavor:"Cured against the wet and the cold by a shepherd who spent more nights outdoors than in, and it still smells of the flock." }
+    ],
+    2: [
+      { id:"garrison-issue-cuirass", name:"Garrison Issue Cuirass",
+        flavor:"Stamped with a unit mark no living officer recognizes and fitted by a smith who took real care over the straps." },
+      { id:"reeves-court-mail", name:"Reeve's Court Mail",
+        flavor:"Commissioned for standing at hearings rather than fighting in them, though it has done both when the hearing went badly." },
+      { id:"vantre-officers-plate", name:"Vantre Officer's Plate",
+        flavor:"Taken from a House Vantre captain who surrendered it along with his commission rather than lose both at once." },
+      { id:"bog-iron-scale-hauberk", name:"Bog Iron Scale Hauberk",
+        flavor:"Each scale hammered by hand from ore pulled out of the black water, heavier than it looks and worth every extra pound." }
+    ],
+    3: [
+      { id:"the-siege-captains-plate", name:"The Siege Captain's Plate",
+        flavor:"Worn through the siege of the old fort and dented in eleven places the wearer refused to have smoothed out." },
+      { id:"the-last-wards-cloak", name:"The Last Ward's Cloak",
+        flavor:"Cut from the banner that flew over the final standing ward of the burnt town, and still smells faintly of smoke." },
+      { id:"the-drowned-courts-parting-gift", name:"The Drowned Court's Parting Gift",
+        flavor:"Stripped from whatever the Drowned Court sends walking the causeway, and no smith has agreed to touch it twice." },
+      { id:"the-hedge-lords-mail", name:"The Hedge Lord's Mail",
+        flavor:"Worn once by the bandit who ruled the hedgerows unopposed, until a hero of the Keep proved otherwise." }
+    ]
+  },
+  trinket: {
+    1: [
+      { id:"bent-copper-ring", name:"Bent Copper Ring",
+        flavor:"Worn smooth by a thumb that rubbed it for luck through three bad harvests, and never once let the wearer down." },
+      { id:"milk-tooth-charm", name:"Milk Tooth Charm",
+        flavor:"Strung on a cord by a mother who wanted her son carrying something of home when he marched off to the border." },
+      { id:"cracked-hearth-stone", name:"Cracked Hearth Stone",
+        flavor:"A fragment of a burned home carried ever since, more reminder than comfort but carried all the same." },
+      { id:"knotted-luck-cord", name:"Knotted Luck Cord",
+        flavor:"Tied by a grandmother who swore each knot turned aside one kind of bad luck, though she never said which kind." }
+    ],
+    2: [
+      { id:"sealed-writ-of-passage", name:"Sealed Writ of Passage",
+        flavor:"A reeve's seal that opens doors no ordinary traveler could reach and closes just as many mouths behind it." },
+      { id:"silver-court-seal", name:"Silver Court Seal",
+        flavor:"Given by a grateful family after a dispute was settled fairly, and recognized by every reeve since." },
+      { id:"the-quartermasters-token", name:"The Quartermaster's Token",
+        flavor:"Traded for favors so often that no one remembers what it was minted for in the first place." },
+      { id:"bloodstained-locket", name:"Bloodstained Locket",
+        flavor:"Taken from a fallen mercenary and kept as a reminder of how quickly standing can be lost in the field." }
+    ],
+    3: [
+      { id:"the-reeves-last-writ", name:"The Reeve's Last Writ",
+        flavor:"Signed on the reeve's deathbed and still honored at every hearing out of respect for the man who wrote it." },
+      { id:"the-drowned-bell-fragment", name:"The Drowned Bell Fragment",
+        flavor:"Broken from the chapel bell that rings under the water, and carried by the one party that ever silenced it for a season." },
+      { id:"the-ash-knight-parley-seal", name:"The Ash-Knight Parley Seal",
+        flavor:"Handed over during a parley that ended without bloodshed, an outcome rare enough that both sides still remember it." },
+      { id:"the-keeps-oldest-banner-pin", name:"The Keep's Oldest Banner Pin",
+        flavor:"Pinned to the first banner ever raised over the Keep, passed down through every lord who has held the line since." }
+    ]
+  }
+};
+const GEAR = {};
+
 const TRAITS = {
   local: {
     name: "Local",
@@ -1537,6 +1810,13 @@ const NARRATION = {
       "The confrontation went as planned, which happens less often than anyone likes.",
       "Ground was taken and held, and that is the whole of the report.",
       "The rival force broke first, and that made all the difference."
+    ],
+    reclaim: [
+      "The hold is broken and the ground answers to the Keep's colours again.",
+      "They went in expecting to lose people and came back having taken the whole of it.",
+      "What the rival spent seasons building came apart in a single long day.",
+      "The banners are back where they were, and this time there are people willing to keep them there.",
+      "It cost more than anyone wanted to say aloud, and the region is theirs again."
     ]
   },
   failure: {
@@ -1588,6 +1868,13 @@ const NARRATION = {
       "The rival force was stronger than the reports had suggested.",
       "It was a bad day in the field and no amount of telling it kindly changes that.",
       "The push failed and the cost of it will be felt for a while yet."
+    ],
+    reclaim: [
+      "The campaign broke on ground the rival knew far better than the Keep did.",
+      "They got as far as the old boundary and no further, and came back thinner for it.",
+      "Too much was asked of too few and the ground stayed where it was.",
+      "The hold did not break, and everyone who went out knows exactly why.",
+      "It was the largest thing the Keep has attempted and it did not work."
     ]
   },
   partial: [
@@ -1898,6 +2185,23 @@ function sanitizeLoaded(data){
     if (h.subclass && !(CONFIG.SUBCLASSES[h.cls] || []).some(s => s.id === h.subclass))
       h.subclass = null;                       // a branch this build no longer defines
     if (h.subclass && h.level < CONFIG.SUBCLASS_LEVEL) h.subclass = null;
+
+    // Gear. The field existed in the save schema from Phase 0 and nothing read
+    // it until the Forge landed, so every save in the wild has it empty or
+    // absent -- and any of it could hold an id this build no longer defines.
+    // Same treatment as traits and Marks: coerce the shape, drop the unknown.
+    if (!h.gear || typeof h.gear !== "object") h.gear = {};
+    CONFIG.GEAR_SLOTS.forEach(slot => {
+      const it = h.gear[slot];
+      const def = it && gearDef(it.id);
+      // An item in the wrong slot is not equipment, it is corruption.
+      h.gear[slot] = (def && def.slot === slot)
+        ? { id: it.id, tier: clamp(1, CONFIG.GEAR_TIER_MAX, Math.round(Number(it.tier)) || 1) }
+        : null;
+    });
+    Object.keys(h.gear).forEach(k => {
+      if (CONFIG.GEAR_SLOTS.indexOf(k) < 0) delete h.gear[k];   // a slot this build removed
+    });
   });
   (data.zones || []).forEach(z => {
     if (!Array.isArray(z.slate)) z.slate = [];
@@ -1943,6 +2247,17 @@ function sanitizeLoaded(data){
     const n = Number(data.materials[m]);
     data.materials[m] = isFinite(n) ? Math.max(0, n) : 0;
   });
+  // The stash, normalised in the one place every field goes through -- and
+  // capped, because a save written by a build with a larger cap must not leave
+  // the player permanently over the line with no way to get back under it.
+  data.stash = (Array.isArray(data.stash) ? data.stash : [])
+    .map(it => {
+      const def = gearDef(it && it.id);
+      return def ? { id: it.id, tier: clamp(1, CONFIG.GEAR_TIER_MAX,
+                                            Math.round(Number(it.tier)) || 1) } : null;
+    })
+    .filter(Boolean)
+    .slice(0, CONFIG.GEAR_STASH_MAX);
   data.activeQuests   = Array.isArray(data.activeQuests)   ? data.activeQuests   : [];
   data.pendingReports = Array.isArray(data.pendingReports) ? data.pendingReports : [];
   // An absence summary saved by an older build may be missing its parts.
@@ -2012,7 +2327,8 @@ function newGame(){
     gold: CONFIG.START_GOLD,
     charters: 0,
     materials: { grain:0, bogiron:0, hardstone:0, cinderglass:0 },
-    keep: { greatHall:1, trainingYard:0, infirmary:0, warRoom:0 },
+    keep: { greatHall:1, trainingYard:0, infirmary:0, warRoom:0, sanctum:0, forge:0 },
+    stash: [],
     zones: CONFIG.ZONES.map(z => ({
       id: z.id,
       influence: 0,
@@ -2302,6 +2618,143 @@ function applyLevels(h){
   return gained;
 }
 
+/* XP a hero takes from one piece of work (§7). Paid per hero, so overstaffing
+   teaches everyone -- it already costs duration and slate slots, which is where
+   that trade belongs. `share` carries partial Delve credit: a party that turned
+   back after one stage of three learned a third as much, the same rule the gold
+   and influence already follow.
+
+   `hours` is the quest's own nominal length, NOT the elapsed wall clock: an
+   overstaffed party finishes faster and must not be paid less for it, and a
+   quest resolved after a two-day absence must not pay two days of XP. */
+function questXP(aq, zd, success, share){
+  const hours = (CONFIG.DURATION_MS[aq.length] || CONFIG.DURATION_MS.medium) / 3600000;
+  const base = Math.max(CONFIG.QUEST_XP_MIN, CONFIG.QUEST_XP_PER_HOUR * hours);
+  const danger = 1 + (zd.danger - 1) * CONFIG.QUEST_XP_DANGER_SCALE;
+  // ONE outcome multiplier, not a failure rate times a share -- multiplying the
+  // two would pay a party that cleared two Delve stages of three LESS than the
+  // arithmetic suggests and make the curve non-obvious. Ordering is the thing
+  // that matters here: a rout pays the floor, a partial pays what it cleared,
+  // and only a clean finish pays in full.
+  const outcome = success ? 1
+    : Math.max(CONFIG.QUEST_XP_FAIL_MULT, share || 0);
+  return Math.round(base * danger * outcome);
+}
+
+/* ============================================================ SANCTUM =====
+   §8: Mark removal. Every Mark's detail page has promised this since Phase 4,
+   which made "permanent" a half-truth the game itself kept pointing at. It is
+   expensive on purpose -- a Mark should cost something real to be rid of, or
+   the whole consequence layer becomes a toll booth.
+   ========================================================================= */
+function sanctumLiftCost(){
+  const e = keepEffect("sanctum");
+  return { gold: e.liftGold, material: e.liftMaterial };
+}
+function canLiftMark(h, markId){
+  if (keepLevel("sanctum") < 1) return { ok:false, why:"nosanctum" };
+  if (!h || !(h.marks || []).some(m => m.id === markId)) return { ok:false, why:"nomark" };
+  // Not while they are out. Same rule as branching: nothing about a hero may
+  // move underneath a quest whose odds were frozen when it was deployed.
+  if (h.status === "deployed") return { ok:false, why:"deployed" };
+  const c = sanctumLiftCost();
+  if (state.gold < c.gold) return { ok:false, why:"gold" };
+  // Paid in the material of the zone the Mark was taken in: the ground that
+  // did it is the ground that answers for it.
+  const m = (h.marks || []).filter(x => x.id === markId)[0];
+  const matId = (zoneDef(m.zoneId) || CONFIG.ZONES[0]).material;
+  if ((state.materials[matId] || 0) < c.material) return { ok:false, why:"material", matId: matId };
+  return { ok:true, matId: matId, cost: c };
+}
+function liftMark(h, markId){
+  const can = canLiftMark(h, markId);
+  if (!can.ok) return false;
+  // Remove BEFORE taking payment. The Phase 5 lesson: a debit followed by a
+  // throw is the one failure mode a defensive read cannot show you.
+  h.marks = (h.marks || []).filter(m => m.id !== markId);
+  state.gold -= can.cost.gold;
+  state.materials[can.matId] = Math.max(0, (state.materials[can.matId] || 0) - can.cost.material);
+  save();
+  return true;
+}
+
+/* ============================================================== FORGE =====
+   §8: craft, upgrade, salvage. Crafting from nothing is deliberately absent --
+   §6 makes gear the reward for going out, and a bench that prints it would
+   undercut the three quest types whose payoff it is. Upgrade and salvage both
+   act on what the field actually gave you.
+   ========================================================================= */
+function gearUpgradeCost(it){
+  const t = gearTier(it);
+  if (t >= CONFIG.GEAR_TIER_MAX) return null;
+  return { gold: CONFIG.GEAR_UPGRADE_GOLD[t], material: CONFIG.GEAR_UPGRADE_MATERIAL[t] };
+}
+/* Upgrading spends the material of the zone whose danger can produce the tier
+   being bought, so the hardest ground gates the best gear twice over. */
+function gearUpgradeMaterial(toTier){
+  const z = CONFIG.ZONES.filter(z => z.danger >= (toTier >= 3 ? CONFIG.GEAR_TIER3_AT_DANGER
+                                                              : CONFIG.GEAR_TIER2_AT_DANGER));
+  return (z[0] || CONFIG.ZONES[CONFIG.ZONES.length - 1]).material;
+}
+function canUpgradeGear(it){
+  if (!keepEffect("forge").upgrade) return { ok:false, why:"forge" };
+  const cost = gearUpgradeCost(it);
+  if (!cost) return { ok:false, why:"maxed" };
+  if (gearTier(it) + 1 > keepEffect("forge").maxTier) return { ok:false, why:"tier" };
+  const matId = gearUpgradeMaterial(gearTier(it) + 1);
+  if (state.gold < cost.gold) return { ok:false, why:"gold", cost:cost, matId:matId };
+  if ((state.materials[matId] || 0) < cost.material)
+    return { ok:false, why:"material", cost:cost, matId:matId };
+  return { ok:true, cost:cost, matId:matId };
+}
+function upgradeGear(it){
+  const can = canUpgradeGear(it);
+  if (!can.ok) return false;
+  it.tier = gearTier(it) + 1;          // raise first, then pay
+  state.gold -= can.cost.gold;
+  state.materials[can.matId] = Math.max(0, (state.materials[can.matId] || 0) - can.cost.material);
+  save();
+  return true;
+}
+function salvageGear(index){
+  if (!keepEffect("forge").salvage) return false;
+  const it = stash()[index];
+  if (!it) return false;
+  const t = gearTier(it);
+  stash().splice(index, 1);
+  state.gold += CONFIG.GEAR_SALVAGE_GOLD[t];
+  // Broken down into the material of the ground it most likely came from.
+  const matId = gearUpgradeMaterial(Math.max(2, t));
+  state.materials[matId] = (state.materials[matId] || 0) + CONFIG.GEAR_SALVAGE_MATERIAL[t];
+  save();
+  return true;
+}
+/* Equip from the stash. Anything already in that slot goes back to the stash
+   rather than being destroyed -- swapping kit must never cost the player an
+   item they earned. */
+function equipGear(h, index){
+  const it = stash()[index];
+  const def = gearDef(it && it.id);
+  if (!h || !def) return false;
+  if (h.status === "deployed") return false;
+  h.gear = h.gear || { weapon:null, armor:null, trinket:null };
+  const current = h.gear[def.slot];
+  stash().splice(index, 1);
+  if (current) stash().push(current);
+  h.gear[def.slot] = it;
+  save();
+  return true;
+}
+function unequipGear(h, slot){
+  if (!h || !h.gear || !h.gear[slot]) return false;
+  if (h.status === "deployed") return false;
+  if (stash().length >= CONFIG.GEAR_STASH_MAX) return false;
+  stash().push(h.gear[slot]);
+  h.gear[slot] = null;
+  save();
+  return true;
+}
+
 /* --------------------------------------------------------- recruitment --- */
 function recruitOffers(){
   const held = new Set(state.heroes.map(h => h.name));
@@ -2338,6 +2791,80 @@ function recruit(def){
    `powerMult` is general physical strength and applies to every physical stat.
    `statMult` is per-stat and is what Marks use, since a scar can sharpen Guile or
    cost Grace -- neither of which powerMult is allowed to touch. */
+/* =============================================================== GEAR =====
+   DESIGN.md §6 lists gear as the reward for Clear, Hunt and Delve, and §8 gives
+   the Forge to craft, upgrade and salvage it. The authored table below carries
+   NAMES AND FLAVOUR ONLY -- every number lives in the CONFIG gear block, so a retune
+   never touches content and content never has to be re-verified for balance.
+
+   An owned item is { id, tier }. Tier is on the INSTANCE, not the definition,
+   because the Forge upgrades an item in place: a billhook that has been
+   reforged twice is still that billhook, which is the whole appeal.
+
+   What each slot does is a real choice rather than a ladder:
+     weapon  - raises the PHYSICAL derived stats only, exactly the set a wound
+               bites. A blade does nothing for a hero sent to a funeral, which
+               is the same rule the injury model already states.
+     armor   - lowers injury chance, for anyone.
+     trinket - raises influence, which no other equipment in the game touches
+               and which is what a Court specialist actually wants.
+   ========================================================================= */
+const GEAR_BY_ID = {};
+function registerGear(raw){
+  Object.keys(GEAR).forEach(k => delete GEAR[k]);
+  Object.keys(GEAR_BY_ID).forEach(k => delete GEAR_BY_ID[k]);
+  CONFIG.GEAR_SLOTS.forEach(slot => {
+    GEAR[slot] = {};
+    for (let tier = 1; tier <= CONFIG.GEAR_TIER_MAX; tier++){
+      const list = ((raw[slot] || {})[tier] || (raw[slot] || {})[String(tier)] || []);
+      GEAR[slot][tier] = list.map(it => {
+        const def = { id: it.id, name: it.name, flavor: it.flavor, slot: slot, baseTier: tier };
+        GEAR_BY_ID[it.id] = def;
+        return def;
+      });
+    }
+  });
+}
+const gearDef = id => GEAR_BY_ID[id] || null;
+const gearTier = it => it ? clamp(1, CONFIG.GEAR_TIER_MAX, Math.round(it.tier) || 1) : 0;
+function gearName(it){
+  const d = gearDef(it && it.id);
+  if (!d) return "unknown";
+  // A reforged item says so. Tier is the instance's, not the table's, so this
+  // is the only place the difference is visible to the player.
+  const up = gearTier(it) - d.baseTier;
+  return d.name + (up > 0 ? " +" + up : "");
+}
+/* Effect of one equipped item, resolved against CONFIG rather than the table. */
+function gearEffect(it){
+  const d = gearDef(it && it.id);
+  if (!d) return null;
+  return (CONFIG.GEAR_EFFECTS[d.slot] || [])[gearTier(it)] || null;
+}
+const PHYSICAL_STATS = Object.keys(DERIVED).filter(k => DERIVED[k].physical);
+registerGear(GEAR_RAW);
+
+/* Every item the Keep owns but nobody is carrying. */
+function stash(){ return (state.stash = state.stash || []); }
+function equipped(h, slot){ return (h.gear || {})[slot] || null; }
+/* Roll a find. Only the types §6 says pay gear can drop it, and the tier is
+   gated on how dangerous the ground was -- the best gear comes out of the worst
+   places, which is what makes a Delve in the Reach worth the bodies. */
+function rollGearDrop(typeId, danger, forge){
+  const base = CONFIG.GEAR_DROP_CHANCE[typeId];
+  if (base === undefined) return null;
+  const chance = base * (1 + (danger - 1) * CONFIG.GEAR_DROP_DANGER_SCALE) + forge.dropBonus;
+  if (rand() >= chance) return null;
+  let tier = 1;
+  if (danger >= CONFIG.GEAR_TIER2_AT_DANGER && rand() < 0.45) tier = 2;
+  if (danger >= CONFIG.GEAR_TIER3_AT_DANGER && rand() < 0.18) tier = 3;
+  tier = Math.min(tier, forge.maxTier);
+  const slot = pick(CONFIG.GEAR_SLOTS);
+  const pool = (GEAR[slot] || {})[tier] || [];
+  if (!pool.length) return null;
+  return { id: pick(pool).id, tier: tier };
+}
+
 function blankEffects(){
   return { powerMult:1, influenceBonus:0, injuryMult:1,
            fatigueGainMult:1, restMult:1, healMult:1, fatigueIgnoredBelow:null,
@@ -2354,6 +2881,18 @@ function traitEffects(h, ctx){
   (h.marks || []).forEach(m => {
     const def = MARKS[m && m.id];
     if (def && def.apply) def.apply(acc, h, c, m);
+  });
+  // Gear rides the same accumulator as everything else, which is the only
+  // reason it reaches the drawer's odds, the resolver, the roster and the
+  // harness without any of them being told gear exists.
+  if (h.gear) CONFIG.GEAR_SLOTS.forEach(slot => {
+    const eff = gearEffect(h.gear[slot]);
+    if (!eff) return;
+    // A weapon lifts the PHYSICAL stats only -- the same set a wound bites, and
+    // for the same reason: a better blade is no use at a funeral.
+    if (eff.statMult) PHYSICAL_STATS.forEach(k => { acc.statMult[k] *= eff.statMult; });
+    if (eff.injuryMult)     acc.injuryMult *= eff.injuryMult;
+    if (eff.influenceBonus) acc.influenceBonus += eff.influenceBonus;
   });
   // The Tier 2 branch, folded in the same way so nothing downstream has to know
   // whether an effect came from a trait, a Mark or a subclass.
@@ -2490,7 +3029,12 @@ function injuryChance(hero, danger, ratio, staff, failed, locked, zoneId, questT
 /* A Grievous wound may leave something permanent. Marks restricted to a zone can
    only be taken in that zone, and nobody carries the same Mark twice. */
 function maybeMark(hero, zoneId, atMs, report){
-  if (rand() >= CONFIG.MARK_CHANCE_ON_GRIEVOUS) return null;
+  // The Sanctum's second half: consecrated ground makes fewer Marks take hold.
+  // It acts ONLY here, on the Mark roll -- lowering injury chance instead would
+  // be the Infirmary's and the Warden's ground, and §8 asks each building to
+  // own a system rather than stack another percentage on a shared one.
+  if (rand() >= CONFIG.MARK_CHANCE_ON_GRIEVOUS * keepEffect("sanctum").markChanceMult)
+    return null;
   const held = new Set((hero.marks || []).map(m => m.id));
   const eligible = Object.keys(MARKS).filter(id =>
     !held.has(id) && (!MARKS[id].onlyZone || MARKS[id].onlyZone === zoneId));
@@ -2592,9 +3136,23 @@ function slateSize(zoneState){
 
 /* Which types this zone can currently offer. Warfront is gated on Honored per
    DESIGN.md §4's tier table; Delve wants at least Noticed. */
+/* Types the ordinary weighted slate may offer. A rival-gated type is never in
+   here -- Reclaim is placed by reseedSlate() on the zones that need it, and
+   leaving it in the pool with weight 0 would still let pickType()'s final
+   fallback return it on a zone with nothing wrong. */
 function availableTypes(zoneState){
   const tier = tierIndexFor(zoneState.influence);
-  return Object.keys(CONFIG.QUEST_TYPES).filter(id => tier >= CONFIG.QUEST_TYPES[id].minTier);
+  return Object.keys(CONFIG.QUEST_TYPES).filter(id => {
+    const t = CONFIG.QUEST_TYPES[id];
+    return !t.rivalGated && t.weight > 0 && tier >= t.minTier;
+  });
+}
+
+/* §4: a rival this far in is the condition Reclaim exists for. Deliberately
+   BELOW the lock threshold -- a campaign you can only mount once the zone has
+   already fallen is a campaign you mount too late. */
+function reclaimOffered(zoneState){
+  return zoneState.rival >= CONFIG.RIVAL_LOCK_AT * CONFIG.RECLAIM_MIN_RIVAL_FRACTION;
 }
 function pickType(zoneState){
   const ids = availableTypes(zoneState);
@@ -2614,7 +3172,8 @@ const QUEST_POOLS = {
   court:       QUIET_QUESTS.court,
   hunt:        DANGEROUS_QUESTS.hunt,
   delve:       DANGEROUS_QUESTS.delve,
-  warfront:    DANGEROUS_QUESTS.warfront
+  warfront:    DANGEROUS_QUESTS.warfront,
+  reclaim:     RECLAIM_QUESTS
 };
 function questPool(typeId, zoneId){
   return (QUEST_POOLS[typeId] && QUEST_POOLS[typeId][zoneId]) || [];
@@ -2685,6 +3244,16 @@ function reseedSlate(zoneState, t, force){
   while (zoneState.slate.length < want && guard++ < 24){
     const q = makeQuest(zoneState, t);
     if (q) zoneState.slate.push(q);
+  }
+  // The campaign sits ON TOP of the slate rather than replacing it, and it does
+  // not count against the slate size -- a zone the rival has nearly taken must
+  // not have its ordinary work crowded out by the thing that fixes it. One at a
+  // time, and not while one is already being fought.
+  if (reclaimOffered(zoneState) &&
+      !zoneState.slate.some(q => q.type === "reclaim") &&
+      !state.activeQuests.some(q => q.type === "reclaim" && q.zoneId === zoneState.id)){
+    const r = makeQuest(zoneState, t, "reclaim");
+    if (r) zoneState.slate.push(r);
   }
   zoneState.nextReseed = t + CONFIG.SLATE_RESEED_MS;
   if (force) zoneState.nextReseed = t + CONFIG.SLATE_RESEED_MS;
@@ -2760,7 +3329,8 @@ function resolveQuest(aq, atMs){
     stages: stages, cleared: cleared,
     heroNames: heroes.map(h => h.name),
     influence: 0, gold: 0, material: 0, materialId: zd.material,
-    charters: 0, intel: false, injuries: [], marks: []
+    charters: 0, intel: false, injuries: [], marks: [],
+    xp: 0, xpTo: 0, levelled: []
   };
 
   if (partial){
@@ -2797,9 +3367,33 @@ function resolveQuest(aq, atMs){
       zs.rival = clamp(0, CONFIG.RIVAL_MAX, zs.rival - CONFIG.INCURSION_ANSWERED_RIVAL);
       report.rivalPushed = round1(was - zs.rival);
     }
+    // §4's own number: a won campaign drops the rival TO 40, it does not
+    // subtract 40. That distinction is the whole point -- the worse the hold
+    // was, the more a Reclaim is worth, so the campaign is always the answer to
+    // a zone that has genuinely gone rather than a flat discount on one that
+    // has not. Never raises it: a rival already below the line is left alone.
+    if (aq.type === "reclaim"){
+      const was = zs.rival;
+      zs.rival = Math.min(zs.rival, CONFIG.RECLAIM_RIVAL_TO);
+      report.rivalPushed = round1(was - zs.rival);
+      report.reclaimed = true;
+    }
     if (type.intel){
       zs.intelUntil = atMs + CONFIG.INTEL_DURATION_MS;
       report.intel = true;
+    }
+    // §6: Clear, Hunt and Delve pay gear. One find per successful job, into the
+    // stash rather than onto a hero -- who carries it is the player's decision,
+    // and a party of five all finding something would drown the report.
+    const found = rollGearDrop(aq.type, zd.danger, keepEffect("forge"));
+    if (found){
+      if (stash().length < CONFIG.GEAR_STASH_MAX){
+        stash().push(found);
+        report.gear = { id: found.id, tier: found.tier, name: gearName(found) };
+      } else {
+        // Say so. A find that silently evaporates is worse than no find.
+        report.gearLost = gearName(found);
+      }
     }
   } else {
     // The floor is absolute, not merely a decay floor. §4 introduces it as a
@@ -2869,6 +3463,25 @@ function resolveQuest(aq, atMs){
       setInjury(sev);
       report.injuries.push({ name: h.name, severity: sev.name });
       if (sev.id === "grievous") maybeMark(h, aq.zoneId, atMs, report);
+    }
+    // §7: the work teaches. Paid AFTER the injury roll, so a hero who came home
+    // maimed still earned it -- surviving a bad job is where the learning is.
+    // Levels are applied here rather than left to advance()'s rest pass, so a
+    // hero who levels on the way home is levelled in the report that says so.
+    // Nothing is banked past the ceiling. applyLevels() stops at LEVEL_MAX and
+    // leaves whatever is left sitting in h.xp, so without this a long-running
+    // save grows an unbounded number that no screen will ever spend.
+    const xp = h.level < CONFIG.LEVEL_MAX ? questXP(aq, zd, success, share) : 0;
+    if (xp > 0){
+      h.xp += xp;
+      // Same figure for every hero who can still learn -- but a fully trained
+      // one earns nothing, so the count is carried too. "+4 XP each" is a lie
+      // on a party where one of them is at the ceiling.
+      report.xp = xp;
+      report.xpTo++;
+      const before = h.level;
+      if (applyLevels(h) > 0) report.levelled.push(h.name + " to " + h.level);
+      if (h.level > before && awaitingSubclass(h)) report.branchReady = true;
     }
     h.status = "idle";
     h.deployedTo = null;
@@ -3032,7 +3645,8 @@ function advance(t){
     // Training Yard: the bench is not idle time. Levels arrive in Phase 8; the
     // experience is really accruing now so that phase only adds the threshold.
     const xpRate = keepEffect("trainingYard").xpPerHour;
-    if (xpRate > 0 && restMs > 0) h.xp += xpRate * (restMs / 3600000);
+    if (xpRate > 0 && restMs > 0 && h.level < CONFIG.LEVEL_MAX)
+      h.xp += xpRate * (restMs / 3600000);
     if (applyLevels(h) > 0) levelledNow.push(h.name + " to " + h.level);
   });
 
@@ -3537,7 +4151,11 @@ function renderZonePanel(v){
   }
   zs.slate.slice().sort((a, b) => a.expiresAt - b.expiresAt).forEach(q => {
     const sel = selectedQuest === q.id;
-    const node = el("div", "quest" + (sel ? " sel" : ""));
+    // `.quest.raid` had a rule since Phase 7 and nothing ever set the class, so
+    // a raid on the board looked like ordinary work. Both markers are applied
+    // here now, and an assertion checks the pair stays wired.
+    const node = el("div", "quest" + (sel ? " sel" : "") +
+      (q.incursion ? " raid" : "") + (q.type === "reclaim" ? " reclaim" : ""));
     const left = q.expiresAt - nowMs();
     // Intel comes from a successful Investigate, or permanently from the War Room.
     const intel = zs.intelUntil > nowMs() || keepEffect("warRoom").intel;
@@ -3987,19 +4605,83 @@ function renderHeroDetail(v){
     h.marks.forEach(m => {
       const d = MARKS[m.id];
       if (!d) return;
+      const can = canLiftMark(h, m.id);
+      const cost = sanctumLiftCost();
+      const matId = (zoneDef(m.zoneId) || CONFIG.ZONES[0]).material;
+      const md = CONFIG.MATERIALS[matId];
+      let tail;
+      if (keepLevel("sanctum") < 1)
+        tail = 'Permanent, unless the Keep raises a Sanctum.';
+      else if (can.ok || can.why === "gold" || can.why === "material")
+        tail = 'The Sanctum can lift this for ' + icon("sym-gold", 11, "var(--gold)") + ' ' +
+               cost.gold + ' and ' + icon(md.sym, 11, md.color) + ' ' + cost.material + ' ' +
+               md.name + '.';
+      else if (can.why === "deployed")
+        tail = 'Nothing about them can be changed while they are in the field.';
+      else tail = 'Permanent.';
       th += '<div class="trait mark"><b>' + d.name + '</b><p>' + d.desc(h, m) +
         '</p><p class="dim" style="margin-top:4px">Taken in ' +
-        ((zoneDef(m.zoneId) || {}).name || "the field") +
-        '. Permanent — the Sanctum that could lift it is deferred past v1.</p></div>';
+        ((zoneDef(m.zoneId) || {}).name || "the field") + '. ' + tail + '</p>' +
+        (keepLevel("sanctum") >= 1 && can.why !== "deployed"
+          ? '<button class="btn sm" data-lift="' + m.id + '"' +
+            (can.ok ? "" : " disabled") + '>Lift this Mark</button>' : '') +
+        '</div>';
     });
   }
+  const SLOT_LABEL = { weapon:"Weapon", armor:"Armour", trinket:"Trinket" };
+  const out = h.status === "deployed";
   th += '<h3 style="margin-top:11px">Gear</h3><div class="gearslots">' +
-    '<span class="gearslot">Weapon</span><span class="gearslot">Armour</span>' +
-    '<span class="gearslot">Trinket</span></div>' +
-    '<div class="tiny dim" style="margin-top:6px">The Forge is deferred past v1; ' +
-    'gear arrives with it.</div>';
+    CONFIG.GEAR_SLOTS.map(slot => {
+      const it = equipped(h, slot);
+      return '<span class="gearslot' + (it ? " filled" : "") + '" data-slot="' + slot + '">' +
+        '<i>' + SLOT_LABEL[slot] + '</i>' +
+        (it ? '<b>' + gearName(it) + '</b>' : '<b class="dim">empty</b>') + '</span>';
+    }).join("") + '</div>';
+  const anyEquipped = CONFIG.GEAR_SLOTS.some(s => equipped(h, s));
+  if (anyEquipped)
+    th += '<div class="tiny dim" style="margin-top:6px">' +
+      CONFIG.GEAR_SLOTS.filter(s => equipped(h, s)).map(s => {
+        const it = equipped(h, s), d = gearDef(it.id);
+        return '<b>' + gearName(it) + '</b> — ' + d.flavor;
+      }).join('<br>') + '</div>';
+
+  // What is on the shelf that this hero could take, grouped by slot.
+  const fits = stash().map((it, i) => ({ it, i, def: gearDef(it.id) })).filter(x => x.def);
+  if (out){
+    th += '<div class="tiny warn" style="margin-top:8px">' + icon("sym-warn", 11) +
+      ' Kit cannot be changed while they are in the field — the odds for that ' +
+      'quest were fixed when it was posted.</div>';
+  } else if (fits.length){
+    th += '<h3 style="margin-top:11px">The Shelf</h3><div class="shelf">' +
+      fits.map(x => '<button class="btn sm shelfitem" data-equip="' + x.i + '">' +
+        gearName(x.it) + '<span>' + SLOT_LABEL[x.def.slot] + ' · tier ' + gearTier(x.it) +
+        '</span></button>').join("") + '</div>';
+  } else {
+    th += '<div class="tiny dim" style="margin-top:8px">Nothing on the shelf. Gear ' +
+      'comes back from Clear, Hunt and Delve work.</div>';
+  }
   tcard.innerHTML = th;
   v.appendChild(tcard);
+
+  tcard.querySelectorAll("[data-lift]").forEach(b => {
+    b.onclick = () => {
+      const name = (MARKS[b.dataset.lift] || {}).name || "the Mark";
+      if (liftMark(h, b.dataset.lift)){ toast(name + " lifted."); render(); }
+    };
+  });
+  if (!out){
+    tcard.querySelectorAll("[data-equip]").forEach(b => {
+      b.onclick = () => {
+        if (equipGear(h, Number(b.dataset.equip))) render();
+      };
+    });
+    tcard.querySelectorAll(".gearslot.filled").forEach(n => {
+      activatable(n, "Unequip " + gearName(equipped(h, n.dataset.slot)), () => {
+        if (unequipGear(h, n.dataset.slot)) render();
+        else toast("The shelf is full.");
+      });
+    });
+  }
 }
 
 /* ------------------------------------------------------------- keep ------ */
@@ -4025,6 +4707,19 @@ function keepEffectText(id, level){
       (e.expiryBonus > 0 ? " · slate entries last <b>+" +
         Math.round(e.expiryBonus * 100) + "%</b> longer" : "") +
       (e.preview ? " · the next turnover is visible" : "");
+  if (id === "sanctum")
+    return e.liftGold > 0
+      ? "Lift a Mark for <b>" + e.liftGold + "</b> gold and <b>" + e.liftMaterial +
+        "</b> of the material where it was taken" +
+        (e.markChanceMult < 1 ? " · Marks take hold <b>" +
+          Math.round((1 - e.markChanceMult) * 100) + "%</b> less often" : "")
+      : "Marks cannot be lifted";
+  if (id === "forge")
+    return (e.maxTier > 1 ? "Finds up to <b>tier " + e.maxTier + "</b>" : "Only the plainest finds") +
+      (e.dropBonus > 0 ? " · <b>+" + Math.round(e.dropBonus * 100) +
+        "%</b> chance of a find" : " · no better chance of a find") +
+      (e.upgrade ? " · gear can be reforged" : "") +
+      (e.salvage ? " · gear can be broken down" : "");
   return "";
 }
 
@@ -4067,6 +4762,40 @@ function renderKeep(){
   h += '<div class="tiny" style="border-top:1px solid var(--line);margin-top:6px;padding-top:6px;' +
     'display:flex"><span style="flex:1">Total upkeep</span><b class="num ' +
     (totalDecay > 0 ? "warn" : "dim") + '">' + round1(totalDecay) + ' influence / day</b></div></div>';
+
+  // The Forge's own shelf. It lives on the Keep screen rather than the roster
+  // because salvage and reforging are things done to the Keep's holdings, not
+  // to a person -- equipping is the part that belongs to a hero.
+  const forge = keepEffect("forge");
+  if (stash().length || keepLevel("forge") > 0){
+    h += '<h3 style="margin-top:12px">The Shelf</h3>';
+    h += '<div class="card"><div class="tiny muted" style="margin-bottom:8px">' +
+      stash().length + ' of ' + CONFIG.GEAR_STASH_MAX + ' held' +
+      (keepLevel("forge") === 0
+        ? ' · <span class="warn">a Forge would let this be reworked or broken down</span>'
+        : '') + '</div>';
+    if (!stash().length){
+      h += '<div class="stub">Nothing here. Gear comes back from Clear, Hunt and Delve work.</div>';
+    } else {
+      h += stash().map((it, i) => {
+        const d = gearDef(it.id);
+        if (!d) return "";
+        const up = canUpgradeGear(it);
+        const t = gearTier(it);
+        return '<div class="gearrow"><span class="gi"><b>' + gearName(it) + '</b>' +
+          '<span class="tiny dim">' + d.slot + ' · tier ' + t + '</span></span>' +
+          '<span class="ga">' +
+            (forge.upgrade && t < CONFIG.GEAR_TIER_MAX
+              ? '<button class="btn sm" data-reforge="' + i + '"' + (up.ok ? "" : " disabled") +
+                '>Reforge ' + (up.cost ? icon("sym-gold", 10, "var(--gold)") + up.cost.gold : "") +
+                '</button>' : '') +
+            (forge.salvage
+              ? '<button class="btn sm" data-salv="' + i + '">Break down</button>' : '') +
+          '</span></div>';
+      }).join("");
+    }
+    h += '</div>';
+  }
 
   h += '<h3 style="margin-top:12px">Buildings</h3>';
   Object.keys(CONFIG.BUILDINGS).forEach(id => {
@@ -4119,6 +4848,19 @@ function renderKeep(){
         toast(CONFIG.BUILDINGS[id].name + " raised to level " + keepLevel(id));
         render();
       }
+    };
+  });
+  v.querySelectorAll("button[data-reforge]").forEach(btn => {
+    btn.onclick = () => {
+      const it = stash()[Number(btn.dataset.reforge)];
+      if (it && upgradeGear(it)){ toast(gearName(it) + " reforged."); render(); }
+    };
+  });
+  v.querySelectorAll("button[data-salv]").forEach(btn => {
+    btn.onclick = () => {
+      const i = Number(btn.dataset.salv);
+      const label = gearName(stash()[i]);
+      if (salvageGear(i)){ toast(label + " broken down."); render(); }
     };
   });
 }
@@ -4212,12 +4954,20 @@ function helpSections(){
     '<p>Each region also has someone else who wants it. The <b>rival</b> track climbs ' +
     'as your standing decays and by <b>' + CONFIG.RIVAL_GAIN_ON_FAIL + '</b> every ' +
     'time a job there fails.</p>' + dl([
+      // Both of these begin at the same number, so they are one entry. Two
+      // headings reading "Rival 60+" taught the player there were two
+      // thresholds, and the tutorial's own duplicate-literal check caught it.
       ["Rival " + CONFIG.INCURSION_RIVAL_MIN + "+",
-       "They start raiding. A raid appears on the slate and expires in " +
-       Math.round(CONFIG.INCURSION_EXPIRY_MS / 3600000) + " hours. Answer it and " +
-       "the rival falls back <b>" + CONFIG.INCURSION_ANSWERED_RIVAL + "</b> — the only " +
-       "thing in the game that pushes a rival down. Ignore it and they take gold and " +
-       "materials on the way past."],
+       "Two things start at once. <b>They begin raiding</b>: a raid appears on the " +
+       "slate and expires in " + Math.round(CONFIG.INCURSION_EXPIRY_MS / 3600000) +
+       " hours. Answer it and the rival falls back <b>" +
+       CONFIG.INCURSION_ANSWERED_RIVAL + "</b>; ignore it and they take gold and " +
+       "materials on the way past. And a <b>Reclaim</b> campaign becomes available — " +
+       CONFIG.QUEST_TYPES.reclaim.min + " to " + CONFIG.QUEST_TYPES.reclaim.max +
+       " heroes, the largest thing the Keep can attempt, and the only thing that " +
+       "properly undoes a hold. Winning one drops the rival <b>to " +
+       CONFIG.RECLAIM_RIVAL_TO + "</b> however high it had climbed, so the worse the " +
+       "hold, the more a campaign is worth."],
       ["Rival " + CONFIG.RIVAL_LOCK_AT + "+",
        "The region is <b>Contested</b>: work there is " +
        pct(CONFIG.RIVAL_LOCK_DIFFICULTY_MULT - 1) + " harder, " +
@@ -4276,8 +5026,14 @@ function helpSections(){
     'nothing anywhere else; Fen-Wise is only Marrowfen; Sure-Footed is only ' +
     'Thornmarch. The deploy panel shows each hero&rsquo;s strength <b>in the region ' +
     'you are looking at</b>, with an arrow when a trait has moved it.</p>' +
-    '<p><b>Levels.</b> Experience accrues only while a hero is <em>resting at the ' +
-    'Keep</em>, and only once you have built a Training Yard. Each level raises one ' +
+    '<p><b>Levels.</b> Experience comes from two places, and choosing between ' +
+    'them is the point. <b>Finishing a job</b> pays roughly <b>' +
+    CONFIG.QUEST_XP_PER_HOUR + ' XP an hour</b> of its length, more in the ' +
+    'dangerous regions and less when it goes wrong. <b>Resting at the Keep</b> ' +
+    'pays nothing until you build a Training Yard, and up to <b>' +
+    CONFIG.BUILDINGS.trainingYard.levels[CONFIG.BUILDINGS.trainingYard.max].xpPerHour +
+    ' an hour</b> once it is finished — so a maxed Yard out-teaches ordinary work, ' +
+    'and only the worst ground in the realm beats it. Each level raises one ' +
     'attribute. At level <b>' + CONFIG.SUBCLASS_LEVEL + '</b> a hero branches into one ' +
     'of two specialisations, permanently. Level ' + CONFIG.LEVEL_MAX + ' is the ceiling.</p>');
 
@@ -4299,7 +5055,8 @@ function helpSections(){
        "</b> that the wound worsens instead of healing."],
       ["Marks", "A Grievous wound carries a <b>" + pct(CONFIG.MARK_CHANCE_ON_GRIEVOUS) +
        "</b> chance of a permanent Mark — a scar with real numbers on it, some good, " +
-       "most a trade. Marks never go away."]
+       "most a trade. Only a <b>Sanctum</b> can lift one, and it is paid for in gold " +
+       "and in the material of the ground where it was taken."]
     ]) +
     '<p><b>Benching is often the correct play,</b> and that is measured rather than ' +
     'advice: a Keep that rests its wounded earns more standing from half as many jobs ' +
@@ -4322,7 +5079,23 @@ function helpSections(){
        "how the treadmill becomes a ratchet."]
     ]));
 
-  add("The Keep", '<p>Four buildings, ' + CONFIG.BUILDINGS.greatHall.max +
+  add("Gear", '<p>Clear, Hunt and Delve work sometimes turns something up. A find ' +
+    'goes on <b>the shelf</b> at the Keep; carrying it is a separate decision, made ' +
+    'on a hero&rsquo;s own page. The three slots are not interchangeable:</p>' +
+    dl([["Weapon", "Raises the <b>physical</b> stats only — Power, Endurance and " +
+         "Muster. Exactly the set a wound bites, and for the same reason: a better " +
+         "blade is no use at a funeral. A Court specialist wants none of it."],
+        ["Armour", "Lowers the chance of being hurt, for anyone, anywhere."],
+        ["Trinket", "Raises the standing every success is worth. The only equipment " +
+         "in the game that helps a hero who never fights."]]) +
+    '<p>Better ground yields better gear — tier 2 needs danger <b>' +
+    CONFIG.GEAR_TIER2_AT_DANGER + '</b> or worse, tier 3 only the <b>' +
+    (CONFIG.ZONES.filter(z => z.danger >= CONFIG.GEAR_TIER3_AT_DANGER)[0] || {}).name +
+    '</b>. The shelf holds <b>' + CONFIG.GEAR_STASH_MAX + '</b>; a find made with no ' +
+    'room is left where it lay, and the report says so.</p>');
+
+  add("The Keep", '<p>' + spell(Object.keys(CONFIG.BUILDINGS).length) + ' buildings, ' +
+    CONFIG.BUILDINGS.greatHall.max +
     ' levels each. Every upgrade costs gold plus materials from at least <b>' +
     CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE + ' different regions</b> — which is why ' +
     'going wide is a prerequisite and not a preference.</p>' +
@@ -4513,8 +5286,21 @@ function showReport(){
     if (r.charters)   h += '<span class="good">' + icon("sym-charter", 11, "var(--ink)") +
       ' +' + r.charters + ' Charter' + (r.charters > 1 ? "s" : "") + '</span>';
     if (r.rivalPushed) h += '<span class="good">−' + r.rivalPushed + ' rival</span>';
+    if (r.gear)       h += '<span class="gear-tally">' + icon("sym-sword", 11, "var(--azure)") +
+      ' ' + r.gear.name + '</span>';
+    if (r.gearLost)   h += '<span class="warn">' + r.gearLost + ' left behind — the shelf is full</span>';
+    if (r.reclaimed)  h += '<span class="good">the hold is broken</span>';
+    if (r.xp)         h += '<span class="xp-tally">+' + r.xp + ' XP' +
+      (r.xpTo && r.xpTo < r.heroNames.length ? ' to ' + r.xpTo : ' each') + '</span>';
     (r.marks || []).forEach(m => { h += '<span class="mark-tally">' + m.mark + '</span>'; });
-    h += '</div></div>';
+    h += '</div>';
+    // A level is the one thing in this tally the player might act on, so it gets
+    // its own line rather than a chip lost among the coin.
+    if ((r.levelled || []).length)
+      h += '<div class="levelup">' + icon("sym-sword", 11, "var(--t4)") + ' ' +
+        nameList(r.levelled.map(s => s.replace(" to ", " reached level "))) + '.' +
+        (r.branchReady ? ' <b>A branch is waiting on the roster.</b>' : '') + '</div>';
+    h += '</div>';
   });
   h += '</div><div class="mfoot"><button class="btn pri" id="rclose">Very well</button></div></div>';
   scrim.innerHTML = h;
@@ -4959,6 +5745,370 @@ function assertAll(){
     return duplicated.length === 0 ? true
       : "matched in more than one place, so it no longer pins anything: " +
         duplicated.join("; ");
+  });
+
+  chk("finished work pays XP, and benching still out-teaches it", () => {
+    const real = state, wasDisarmed = savesDisarmed;
+    try {
+      savesDisarmed = true;
+      state = JSON.parse(JSON.stringify(real));
+      const gentle = CONFIG.ZONES[0], harsh = CONFIG.ZONES[CONFIG.ZONES.length - 1];
+
+      // Ordering: a clean finish beats a partial, which beats a rout, which is
+      // still more than nothing. Nobody comes home having learned negative.
+      const aq = { length:"long" };
+      const win  = questXP(aq, gentle, true,  1);
+      const part = questXP(aq, gentle, false, 2 / 3);
+      const rout = questXP(aq, gentle, false, 0);
+      if (!(win > part && part > rout && rout > 0))
+        return "outcome order is wrong: win " + win + ", partial " + part + ", rout " + rout;
+
+      // Longer work teaches more, and so does worse ground.
+      if (!(questXP({ length:"long" }, gentle, true, 1) >
+            questXP({ length:"medium" }, gentle, true, 1) &&
+            questXP({ length:"medium" }, gentle, true, 1) >
+            questXP({ length:"short" }, gentle, true, 1)))
+        return "a longer quest does not teach more";
+      if (!(questXP(aq, harsh, true, 1) > questXP(aq, gentle, true, 1)))
+        return "the dangerous end of the map teaches no more than the gentle end";
+
+      // §7's balance requirement, asserted as a RATE rather than a total: a
+      // maxed Training Yard must out-teach ordinary work, or the bench stops
+      // being a real choice and "deploy everyone always" wins the argument.
+      const yard = CONFIG.BUILDINGS.trainingYard;
+      const maxYard = yard.levels[yard.max].xpPerHour;
+      const fieldRate = win / (CONFIG.DURATION_MS.long / 3600000);
+      if (!(maxYard > fieldRate))
+        return "a maxed Training Yard (" + maxYard + "/h) does not beat ordinary " +
+               "field work (" + round1(fieldRate) + "/h), so benching stops paying";
+      // ...but the worst ground in the realm should beat it, or danger buys
+      // nothing but scars.
+      if (!(questXP(aq, harsh, true, 1) / (CONFIG.DURATION_MS.long / 3600000) > maxYard))
+        return "the most dangerous work in the game teaches no faster than resting";
+
+      // And it must actually reach the hero through the real resolver.
+      const zs = state.zones[0];
+      const party = state.heroes.slice(0, 2);
+      party.forEach(h => { h.status = "idle"; h.xp = 0; h.level = 1;
+                           h.injury = { severity:null, healsAt:0 }; h.fatigue = 0; });
+      const q = { id:"xpprobe", zoneId: zs.id, type:"clear", typeName:"Clear",
+        stat:"power", name:"XP Probe", flavor:"f", length:"medium",
+        durationMs: CONFIG.DURATION_MS.medium, required:2, stages:1,
+        difficulty: questDifficulty("clear", 2, gentle.danger),
+        gold:24, material:1, expiresAt: nowMs() + 1e6 };
+      zs.slate.push(q);
+      deploy(q, party);
+      const rec = state.activeQuests.pop();
+      state.pendingReports = [];
+      withSeed(0xC0FFEE, () => resolveQuest(rec, nowMs()));
+      if (!(party[0].xp > 0)) return "a hero finished a quest and earned no XP";
+      const rep = state.pendingReports[state.pendingReports.length - 1];
+      if (!rep || !(rep.xp > 0)) return "the report does not tell the player about the XP";
+      if (rep.xp !== party[0].xp && !rep.levelled.length)
+        return "the report says " + rep.xp + " XP but the hero banked " + party[0].xp;
+      if (rep.xpTo !== party.length)
+        return "the report credits " + rep.xpTo + " of " + party.length + " heroes";
+
+      // A hero at the ceiling banks nothing. applyLevels() cannot spend it, so
+      // without the guard a long save grows a number no screen will ever use --
+      // and the report must not claim "each" when one of them earned nothing.
+      const maxed = party[0];
+      maxed.level = CONFIG.LEVEL_MAX; maxed.xp = 0; maxed.status = "idle";
+      party[1].status = "idle";
+      const q2 = Object.assign({}, q, { id:"xpprobe2" });
+      zs.slate.push(q2);
+      deploy(q2, [maxed, party[1]]);
+      const rec2 = state.activeQuests.pop();
+      withSeed(0xC0FFEE, () => resolveQuest(rec2, nowMs()));
+      if (maxed.xp !== 0)
+        return "a hero at level " + CONFIG.LEVEL_MAX + " banked " + maxed.xp +
+               " XP that nothing can ever spend";
+      const rep2 = state.pendingReports[state.pendingReports.length - 1];
+      if (rep2.xpTo !== 1)
+        return "the report credits " + rep2.xpTo + " heroes when only one could learn";
+      return true;
+    } finally { savesDisarmed = wasDisarmed; state = real; }
+  });
+
+  chk("a save written before gear existed loads clean", () => {
+    // The half that rots is the PERSISTED copy. Every save in the wild predates
+    // the Sanctum, the Forge and gear, and the gear field has sat in the schema
+    // since Phase 0 with nothing reading it -- so it can hold anything.
+    const old = JSON.parse(JSON.stringify(state));
+    delete old.stash;
+    old.keep = { greatHall:2, trainingYard:1, infirmary:0, warRoom:0 };  // no new buildings
+    const anyWeapon = GEAR.weapon[1][0].id, anyTrinket = GEAR.trinket[1][0].id;
+    old.heroes.forEach(h => { h.gear = { weapon:null, armor:null, trinket:null }; });
+    old.heroes[0].gear = {
+      weapon: { id:"no-such-item", tier:9 },        // an id this build dropped
+      armor:  { id: anyWeapon, tier:2 },            // a weapon in the armour slot
+      trinket: null,
+      boots:  { id: anyTrinket, tier:1 }            // a slot this build does not have
+    };
+    old.stash = [{ id: anyTrinket, tier:"2" }, { id:"gone", tier:1 }, null, { id: anyWeapon }];
+    for (let i = 0; i < CONFIG.GEAR_STASH_MAX + 20; i++) old.stash.push({ id: anyWeapon, tier:1 });
+
+    const m = sanitizeLoaded(migrate(old));
+    Object.keys(CONFIG.BUILDINGS).forEach(id => {
+      if (typeof m.keep[id] !== "number") throw new Error("keep." + id + " missing after load");
+    });
+    const g = m.heroes[0].gear;
+    if (g.weapon) return "an item this build no longer defines survived the load";
+    if (g.armor) return "a weapon stayed equipped in the armour slot";
+    if ("boots" in g) return "a slot this build does not have survived the load";
+    if (Object.keys(g).length !== CONFIG.GEAR_SLOTS.length) return "the gear object has stray keys";
+    if (m.stash.length !== CONFIG.GEAR_STASH_MAX)
+      return "the stash loaded at " + m.stash.length + ", over the cap of " + CONFIG.GEAR_STASH_MAX;
+    if (m.stash.some(it => !gearDef(it.id))) return "an unknown item survived in the stash";
+    if (m.stash.some(it => typeof it.tier !== "number" || !isFinite(it.tier)))
+      return "a stash item has a tier that is not a number";
+    if (m.stash.some(it => it.tier < 1 || it.tier > CONFIG.GEAR_TIER_MAX))
+      return "a stash item has a tier outside the range";
+    // And the whole thing must still be a save the game can run.
+    if (!Array.isArray(m.heroes) || !m.heroes.length) return "the roster did not survive";
+    return true;
+  });
+
+  chk("a styled quest card actually wears its class", () => {
+    // `.quest.raid` had a CSS rule from Phase 7 that nothing ever applied, so
+    // the one card the player most needs to spot rendered like ordinary work.
+    // Rendering the card and reading the real class is the only way to catch
+    // a rule and its trigger drifting apart -- the stylesheet cannot say who
+    // uses it, and neither can a source scan.
+    const real = state, realZone = openZone, realView = currentView, realSel = selectedQuest;
+    try {
+      state = JSON.parse(JSON.stringify(real));
+      const z = state.zones[0];
+      z.rival = CONFIG.RIVAL_LOCK_AT;      // enough for both a raid and a campaign
+      z.slate = [];
+      // Own the premise: a campaign already in the field correctly suppresses
+      // the offer of a second one, so a save with one in flight left this check
+      // with nothing to render and it reported the game broken.
+      state.activeQuests = [];
+      reseedSlate(z, nowMs(), true);
+      const rc = z.slate.filter(q => q.type === "reclaim")[0];
+      if (!rc) return "no Reclaim to render";
+      z.slate.push(Object.assign({}, z.slate[0], { id:"probe-raid", incursion:true }));
+      currentView = "map"; openZone = z.id; selectedQuest = null;
+      render();
+      const cards = [...document.querySelectorAll("#v-map .quest")];
+      if (!cards.length) return "the slate rendered no cards at all";
+      const marked = cards.filter(n => n.classList.contains("reclaim"));
+      if (marked.length !== 1) return marked.length + " cards carry the reclaim class";
+      if (!cards.some(n => n.classList.contains("raid"))) return "a raid card carries no raid class";
+      // And the pill, which is the part the player actually reads.
+      if (!marked[0].querySelector(".qtype.t-reclaim")) return "the Reclaim pill is unstyled";
+      return true;
+    } finally {
+      state = real; openZone = realZone; currentView = realView; selectedQuest = realSel;
+      render();
+    }
+  });
+
+  chk("the gear table is complete and every item does something", () => {
+    const seenId = new Set(), seenName = new Set();
+    for (const slot of CONFIG.GEAR_SLOTS){
+      if (!GEAR[slot]) return "no gear at all for slot " + slot;
+      for (let t = 1; t <= CONFIG.GEAR_TIER_MAX; t++){
+        const list = GEAR[slot][t];
+        if (!Array.isArray(list) || list.length < 3)
+          return slot + " tier " + t + " has " + ((list && list.length) || 0) + " items, want 3+";
+        // Every tier of every slot must actually change something, or a whole
+        // rank of gear is decoration the player cannot tell apart.
+        const eff = (CONFIG.GEAR_EFFECTS[slot] || [])[t];
+        if (!eff || !Object.keys(eff).length) return slot + " tier " + t + " has no effect";
+        for (const it of list){
+          if (!it.id || !it.name || !it.flavor) return slot + "/" + t + " has an incomplete item";
+          if (seenId.has(it.id)) return "two items share the id " + it.id;
+          if (seenName.has(it.name)) return "two items share the name " + it.name;
+          seenId.add(it.id); seenName.add(it.name);
+          if (gearDef(it.id) !== it) return it.id + " is not indexed by registerGear";
+          if (gearDef(it.id).slot !== slot) return it.id + " is indexed under the wrong slot";
+        }
+      }
+      // Tiers must improve monotonically, or reforging can make an item worse.
+      for (let t = 2; t <= CONFIG.GEAR_TIER_MAX; t++){
+        const a = CONFIG.GEAR_EFFECTS[slot][t - 1], b = CONFIG.GEAR_EFFECTS[slot][t];
+        if (a.statMult !== undefined && !(b.statMult > a.statMult))
+          return slot + " tier " + t + " is no stronger than tier " + (t - 1);
+        if (a.injuryMult !== undefined && !(b.injuryMult < a.injuryMult))
+          return slot + " tier " + t + " protects no better than tier " + (t - 1);
+        if (a.influenceBonus !== undefined && !(b.influenceBonus > a.influenceBonus))
+          return slot + " tier " + t + " is worth no more than tier " + (t - 1);
+      }
+    }
+    return true;
+  });
+
+  chk("gear reaches the formulas, and a blade does nothing at a funeral", () => {
+    const real = state;
+    try {
+      state = JSON.parse(JSON.stringify(real));
+      const mk = () => ({ id:"g", name:"G", cls:"Warrior", role:"Front", level:1, xp:0,
+        subclass:null, homeZone:"greenhollow", traits:[], marks:[], fatigue:0,
+        injury:{severity:null,healsAt:0}, status:"idle",
+        attrs:{ might:5, agility:5, wits:5, spirit:5, presence:5 },
+        gear:{ weapon:null, armor:null, trinket:null } });
+      const ctx = { zoneId:"greenhollow", danger:1, failed:false };
+      const bare = mk();
+      const topWeapon = GEAR.weapon[CONFIG.GEAR_TIER_MAX][0];
+
+      // A weapon lifts the physical stats...
+      const armed = mk();
+      armed.gear.weapon = { id: topWeapon.id, tier: CONFIG.GEAR_TIER_MAX };
+      if (!(heroStat(armed, "power", ctx) > heroStat(bare, "power", ctx)))
+        return "a weapon does not raise Power";
+      // ...and NOT the ones a wound leaves alone. This is the design rule, not
+      // an implementation detail: gear must not quietly make Grace physical.
+      for (const s of ["guile", "grace"])
+        if (heroStat(armed, s, ctx) !== heroStat(bare, s, ctx))
+          return "a weapon changed " + s + ", which no wound touches either";
+
+      const armored = mk();
+      armored.gear.armor = { id: GEAR.armor[CONFIG.GEAR_TIER_MAX][0].id, tier: CONFIG.GEAR_TIER_MAX };
+      if (!(traitEffects(armored, ctx).injuryMult < traitEffects(bare, ctx).injuryMult))
+        return "armour does not lower injury";
+      const charmed = mk();
+      charmed.gear.trinket = { id: GEAR.trinket[CONFIG.GEAR_TIER_MAX][0].id, tier: CONFIG.GEAR_TIER_MAX };
+      if (!(traitEffects(charmed, ctx).influenceBonus > traitEffects(bare, ctx).influenceBonus))
+        return "a trinket does not raise influence";
+
+      // Tier on the INSTANCE, not the definition: a reforged tier-1 item must
+      // be worth exactly what a tier-3 item is worth.
+      const reforged = mk();
+      reforged.gear.weapon = { id: GEAR.weapon[1][0].id, tier: CONFIG.GEAR_TIER_MAX };
+      if (Math.abs(heroStat(reforged, "power", ctx) - heroStat(armed, "power", ctx)) > 1e-9)
+        return "a reforged item is not worth what its tier says";
+
+      // A save carrying an item this build no longer defines must not break.
+      const junk = mk();
+      junk.gear.weapon = { id:"no-such-item", tier:2 };
+      if (heroStat(junk, "power", ctx) !== heroStat(bare, "power", ctx))
+        return "an unknown item still changed a stat";
+      return true;
+    } finally { state = real; }
+  });
+
+  chk("the Sanctum lifts a Mark, takes payment, and refuses when it cannot", () => {
+    const real = state;
+    try {
+      state = JSON.parse(JSON.stringify(real));
+      const h = state.heroes[0];
+      h.status = "idle";
+      const markId = Object.keys(MARKS)[0];
+      const zone = MARKS[markId].onlyZone || CONFIG.ZONES[0].id;
+      const matId = zoneDef(zone).material;
+      // The control is this hero WITHOUT the Mark, measured now -- not a
+      // stripped stand-in. Comparing against a bare synthetic hero silently
+      // folded in everything else they carry, so the check failed the moment
+      // the roster had gear on it and blamed the Sanctum for the difference.
+      h.marks = [];
+      const unmarked = traitEffects(h, { zoneId: zone, danger:1 }).injuryMult;
+      h.marks = [{ id: markId, zoneId: zone, atMs: 0 }];
+
+      state.keep.sanctum = 0;
+      if (canLiftMark(h, markId).ok) return "a Mark was liftable with no Sanctum";
+      if (liftMark(h, markId)) return "a Mark was lifted with no Sanctum";
+
+      state.keep.sanctum = 1;
+      const cost = sanctumLiftCost();
+      // The design's literal, not a value read back out of the same constant
+      // the probe moves: lifting a Mark COSTS SOMETHING. Without this the whole
+      // affordability half below is a tautology -- zero the price and both the
+      // check's expectation and the code's requirement fall to zero together,
+      // which is precisely how a free-lift probe sailed through.
+      if (!(cost.gold > 0 && cost.material > 0))
+        return "the Sanctum lifts Marks for nothing";
+      state.gold = cost.gold - 1;
+      state.materials[matId] = cost.material + 5;
+      if (canLiftMark(h, markId).ok) return "a Mark was liftable without the gold";
+      state.gold = cost.gold + 10;
+      state.materials[matId] = cost.material - 1;
+      if (canLiftMark(h, markId).ok) return "a Mark was liftable without the material";
+
+      state.materials[matId] = cost.material + 5;
+      h.status = "deployed";
+      if (canLiftMark(h, markId).ok) return "a Mark was lifted off a hero in the field";
+      h.status = "idle";
+
+      const goldBefore = state.gold, matBefore = state.materials[matId];
+      if (!liftMark(h, markId)) return "a Mark was refused with the Sanctum and the price paid";
+      if (h.marks.some(m => m.id === markId)) return "the Mark is still there";
+      if (state.gold !== goldBefore - cost.gold) return "the gold was not taken";
+      if (state.materials[matId] !== matBefore - cost.material) return "the material was not taken";
+      // §7: the effect must be gone, not merely the chip.
+      if (traitEffects(h, { zoneId: zone, danger:1 }).injuryMult !== unmarked)
+        return "the Mark's effect survived the lift";
+
+      // And the other half: consecrated ground makes fewer Marks take hold.
+      const lvls = CONFIG.BUILDINGS.sanctum.levels;
+      if (!(lvls[CONFIG.BUILDINGS.sanctum.max].markChanceMult < 1))
+        return "a maxed Sanctum does not reduce the Mark chance at all";
+      for (let i = 2; i <= CONFIG.BUILDINGS.sanctum.max; i++)
+        if (lvls[i].markChanceMult > lvls[i - 1].markChanceMult)
+          return "Sanctum level " + i + " protects worse than the level below it";
+      return true;
+    } finally { state = real; }
+  });
+
+  chk("a Reclaim is offered where it is needed and breaks the hold", () => {
+    const real = state;
+    try {
+      state = JSON.parse(JSON.stringify(real));
+      const t = nowMs();
+      const z = state.zones[0];
+
+      // Never on the ordinary weighted slate, at any standing.
+      for (let inf = 0; inf <= CONFIG.INFLUENCE_MAX; inf += 10){
+        z.influence = inf; z.rival = 0;
+        if (availableTypes(z).indexOf("reclaim") >= 0)
+          return "Reclaim is in the ordinary pool at influence " + inf;
+      }
+      z.rival = 0; z.slate = []; state.activeQuests = [];
+      reseedSlate(z, t, true);
+      if (z.slate.some(q => q.type === "reclaim"))
+        return "a Reclaim was offered on a zone with no rival at all";
+
+      // The design's literal: a campaign must be available BEFORE the zone
+      // falls, because one you can only mount afterwards is one you mount too
+      // late. Deriving the test rival from RECLAIM_MIN_RIVAL_FRACTION instead
+      // moved both sides together and let a probe pushing the threshold past
+      // the lock go completely undetected.
+      if (!reclaimOffered({ rival: CONFIG.RIVAL_LOCK_AT - 1 }))
+        return "no Reclaim until the zone has already fallen";
+      if (reclaimOffered({ rival: 0 })) return "a Reclaim was offered at rival 0";
+      z.rival = CONFIG.RIVAL_LOCK_AT - 1;
+      z.slate = [];
+      reseedSlate(z, t, true);
+      const rc = z.slate.filter(q => q.type === "reclaim");
+      if (rc.length !== 1) return rc.length + " Reclaims on one slate";
+      // It must not crowd out the ordinary work -- §6's "weakened, never
+      // forbidden" keeps the penalised slate alongside the campaign.
+      if (z.slate.length < 2) return "the Reclaim replaced the whole slate";
+      reseedSlate(z, t, true);
+      if (z.slate.filter(q => q.type === "reclaim").length !== 1)
+        return "reseeding stacked a second Reclaim";
+
+      // Winning drops the rival TO the target, not BY it.
+      z.rival = 95;
+      const party = state.heroes.slice(0, rc[0].required);
+      party.forEach(x => { x.status = "idle"; x.injury = { severity:null, healsAt:0 }; });
+      const aq = { questId: rc[0].id, zoneId: z.id, type:"reclaim", typeName:"Reclaim",
+        stat:"muster", stages:1, name: rc[0].name, length:"long",
+        heroIds: party.map(x => x.id), ratio: 5, chance: 1,
+        startedAt: t, completesAt: t, gold: 10, material: 1, influence: 5,
+        locked: true, staffCount: party.length, required: rc[0].required };
+      state.pendingReports = [];
+      resolveQuest(aq, t);
+      if (z.rival !== CONFIG.RECLAIM_RIVAL_TO)
+        return "a won Reclaim left the rival at " + round1(z.rival);
+      // And never RAISES a rival that was already below the line.
+      z.rival = 10;
+      state.heroes.slice(0, party.length).forEach(x => { x.status = "idle"; });
+      resolveQuest(aq, t);
+      if (z.rival !== 10) return "a Reclaim pushed a low rival back UP to " + round1(z.rival);
+      return true;
+    } finally { state = real; }
   });
 
   chk("only one dialog is ever on screen", () => {
@@ -7152,7 +8302,7 @@ function assertAll(){
    `uncovered` is the point of the whole exercise: any assertion with no probe
    behind it has never been shown to fail, and is where the next tautology is.
    ========================================================================= */
-function falsify(){
+function falsify(opts){
   const V = CONFIG.TRAIT_VALUES;
   const keep = {};
   const P = [
@@ -7216,6 +8366,70 @@ function falsify(){
               CONFIG.MODAL_FOCUS_SELECTOR =
                 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'; },
       () => { CONFIG.MODAL_FOCUS_SELECTOR = keep.mfs; }],
+    ["a stash cap the loader ignores", "a save written before gear existed loads clean",
+      () => { keep.gs = CONFIG.GEAR_STASH_MAX; CONFIG.GEAR_STASH_MAX = 1e9; },
+      () => { CONFIG.GEAR_STASH_MAX = keep.gs; }],
+    ["a gear slot the loader does not know about",
+      "a save written before gear existed loads clean",
+      () => { keep.gsl = CONFIG.GEAR_SLOTS.slice(); CONFIG.GEAR_SLOTS.push("boots"); },
+      () => { CONFIG.GEAR_SLOTS.length = 0; keep.gsl.forEach(s => CONFIG.GEAR_SLOTS.push(s)); }],
+    ["a gear tier that improves nothing", "the gear table is complete and every item does something",
+      () => { keep.ge = CONFIG.GEAR_EFFECTS.weapon[3];
+              CONFIG.GEAR_EFFECTS.weapon[3] = { statMult: CONFIG.GEAR_EFFECTS.weapon[2].statMult }; },
+      () => { CONFIG.GEAR_EFFECTS.weapon[3] = keep.ge; }],
+    ["armour that protects worse as it improves", "the gear table is complete and every item does something",
+      () => { keep.ga = CONFIG.GEAR_EFFECTS.armor[2].injuryMult;
+              CONFIG.GEAR_EFFECTS.armor[2].injuryMult = 1.5; },
+      () => { CONFIG.GEAR_EFFECTS.armor[2].injuryMult = keep.ga; }],
+    ["a weapon that also sharpens Grace",
+      "gear reaches the formulas, and a blade does nothing at a funeral",
+      () => { keep.gp = PHYSICAL_STATS.slice(); PHYSICAL_STATS.push("grace"); },
+      () => { PHYSICAL_STATS.length = 0; keep.gp.forEach(s => PHYSICAL_STATS.push(s)); }],
+    ["gear that reaches no formula at all",
+      "gear reaches the formulas, and a blade does nothing at a funeral",
+      () => { keep.gw = CONFIG.GEAR_EFFECTS.weapon;
+              CONFIG.GEAR_EFFECTS.weapon = [null, null, null, null]; },
+      () => { CONFIG.GEAR_EFFECTS.weapon = keep.gw; }],
+    ["a free Mark lift", "the Sanctum lifts a Mark, takes payment, and refuses when it cannot",
+      () => { keep.sl = CONFIG.BUILDINGS.sanctum.levels[1].liftGold;
+              CONFIG.BUILDINGS.sanctum.levels[1].liftGold = 0; },
+      () => { CONFIG.BUILDINGS.sanctum.levels[1].liftGold = keep.sl; }],
+    ["a Sanctum that never protects", "the Sanctum lifts a Mark, takes payment, and refuses when it cannot",
+      () => { keep.sm = CONFIG.BUILDINGS.sanctum.levels[5].markChanceMult;
+              CONFIG.BUILDINGS.sanctum.levels[5].markChanceMult = 1; },
+      () => { CONFIG.BUILDINGS.sanctum.levels[5].markChanceMult = keep.sm; }],
+    ["a Reclaim loose on the ordinary slate", "a Reclaim is offered where it is needed and breaks the hold",
+      () => { keep.rg = CONFIG.QUEST_TYPES.reclaim.rivalGated;
+              keep.rw = CONFIG.QUEST_TYPES.reclaim.weight;
+              CONFIG.QUEST_TYPES.reclaim.rivalGated = false;
+              CONFIG.QUEST_TYPES.reclaim.weight = 20; },
+      () => { CONFIG.QUEST_TYPES.reclaim.rivalGated = keep.rg;
+              CONFIG.QUEST_TYPES.reclaim.weight = keep.rw; }],
+    ["a Reclaim offered only after the zone has fallen",
+      "a Reclaim is offered where it is needed and breaks the hold",
+      () => { keep.rf = CONFIG.RECLAIM_MIN_RIVAL_FRACTION; CONFIG.RECLAIM_MIN_RIVAL_FRACTION = 1.2; },
+      () => { CONFIG.RECLAIM_MIN_RIVAL_FRACTION = keep.rf; }],
+    ["a Reclaim that does not break the hold",
+      "a Reclaim is offered where it is needed and breaks the hold",
+      () => { keep.rt = CONFIG.RECLAIM_RIVAL_TO; CONFIG.RECLAIM_RIVAL_TO = CONFIG.RIVAL_MAX; },
+      () => { CONFIG.RECLAIM_RIVAL_TO = keep.rt; }],
+    ["quest XP that ignores the outcome",
+      "finished work pays XP, and benching still out-teaches it",
+      () => { keep.qxf = CONFIG.QUEST_XP_FAIL_MULT; CONFIG.QUEST_XP_FAIL_MULT = 1; },
+      () => { CONFIG.QUEST_XP_FAIL_MULT = keep.qxf; }],
+    ["quest XP that ignores danger",
+      "finished work pays XP, and benching still out-teaches it",
+      () => { keep.qxd = CONFIG.QUEST_XP_DANGER_SCALE; CONFIG.QUEST_XP_DANGER_SCALE = 0; },
+      () => { CONFIG.QUEST_XP_DANGER_SCALE = keep.qxd; }],
+    ["field work that out-teaches a maxed Training Yard",
+      "finished work pays XP, and benching still out-teaches it",
+      () => { keep.qxh = CONFIG.QUEST_XP_PER_HOUR; CONFIG.QUEST_XP_PER_HOUR = 40; },
+      () => { CONFIG.QUEST_XP_PER_HOUR = keep.qxh; }],
+    ["quests that teach nothing at all",
+      "finished work pays XP, and benching still out-teaches it",
+      () => { keep.qxm = CONFIG.QUEST_XP_MIN; keep.qxh2 = CONFIG.QUEST_XP_PER_HOUR;
+              CONFIG.QUEST_XP_MIN = 0; CONFIG.QUEST_XP_PER_HOUR = 0; },
+      () => { CONFIG.QUEST_XP_MIN = keep.qxm; CONFIG.QUEST_XP_PER_HOUR = keep.qxh2; }],
     // The tutorial. These probes are the point of the whole exercise: they move
     // a CONFIG number and prove the PROSE moved with it, which is the only way
     // to know the figures on that screen are read live rather than typed in.
@@ -7629,7 +8843,15 @@ function falsify(){
   ];
 
   const before = assertAll();
-  const results = P.map(([label, expect, brk, restore]) => {
+  // The whole suite runs twice per probe, so a full sweep is now well over a
+  // hundred suite runs and long enough that the tool driving it can be killed
+  // mid-flight -- which reads exactly like probes failing to restore. `slice`
+  // runs a contiguous range of probes so a sweep can be done in chunks that
+  // each finish. Coverage bookkeeping below always considers ALL probes, so a
+  // chunk never falsely reports an assertion as uncovered.
+  const lo = (opts && opts.from) || 0;
+  const hi = (opts && opts.to !== undefined) ? opts.to : P.length;
+  const results = P.slice(lo, hi).map(([label, expect, brk, restore]) => {
     let caught = false, saw = null;
     try {
       brk();
@@ -7651,6 +8873,12 @@ function falsify(){
   // would be worse than saying so. Both are listed with the reason, and both
   // still count as gaps -- just declared ones.
   const UNPROBEABLE = {
+    "a styled quest card actually wears its class":
+      "guards that a CSS rule and the code that applies its class stay wired together. " +
+      "No constant adds or removes a class name from a string concatenation, and every " +
+      "lever that looks usable -- pushing the Reclaim threshold out of reach, say -- " +
+      "makes the check fail because there is no card to inspect rather than because " +
+      "the class went missing, which is the wrong reason and would prove nothing",
     "only one dialog is ever on screen":
       "guards WHICH FLAGS showReport() and showHelp() consult before opening, and that " +
       "closing the tutorial chains into a deferred report. No constant adds or removes " +
@@ -7710,13 +8938,16 @@ function falsify(){
     baselineClean: before.pass,
     checks: before.count,
     probes: results.length,
+    probeTotal: P.length,
+    range: [lo, Math.min(hi, P.length)],
     missed: results.filter(r => !r.caught),
     notRestored: results.filter(r => !r.restoredClean),
     uncovered,                       // assertions never shown to fail -- look here
     declaredUnprobeable,             // known gaps, with the reason stated
     probesNamingNoSuchCheck: unknown, // a renamed check that left its probe behind
     ok: results.every(r => r.caught && r.restoredClean) &&
-        uncovered.length === 0 && unknown.length === 0 && assertAll().pass
+        unknown.length === 0 && assertAll().pass &&
+        (results.length === P.length ? uncovered.length === 0 : true)
   };
 }
 
@@ -7942,6 +9173,37 @@ function sweepPlay(){
     // showReport() learned to defer to it -- they owned `reportOpen` but not
     // `helpOpen`, so they could no longer open the surface they drive, and said
     // "the report did not open" as if the game were broken.
+    run("everyone kitted out, shelf full", s => {
+      s.keep.forge = CONFIG.BUILDINGS.forge.max;
+      s.stash = [];
+      const top = CONFIG.GEAR_TIER_MAX;
+      s.heroes.forEach(h => {
+        h.gear = {};
+        CONFIG.GEAR_SLOTS.forEach(slot => {
+          h.gear[slot] = { id: GEAR[slot][top][0].id, tier: top };
+        });
+      });
+      while (s.stash.length < CONFIG.GEAR_STASH_MAX)
+        s.stash.push({ id: GEAR.weapon[1][0].id, tier: 1 });
+    });
+    run("marked, with a Sanctum", s => {
+      s.keep.sanctum = CONFIG.BUILDINGS.sanctum.max;
+      const ids = Object.keys(MARKS);
+      s.heroes.forEach((h, i) => {
+        h.marks = [{ id: ids[i % ids.length], zoneId: s.zones[i % s.zones.length].id, atMs: 0 }];
+      });
+    });
+    run("a campaign in flight on a fallen zone", s => {
+      state = s;
+      const z = s.zones[0];
+      z.rival = CONFIG.RIVAL_LOCK_AT + 8;
+      z.influence = 15;
+      z.slate = [];
+      reseedSlate(z, nowMs(), true);
+      const rc = z.slate.filter(q => q.type === "reclaim")[0];
+      const idle = s.heroes.filter(h => h.status === "idle");
+      if (rc && idle.length >= rc.required) deploy(rc, idle.slice(0, rc.required));
+    });
     run("with the tutorial on screen", s => {
       state = s;
       helpOpen = false; reportOpen = false;
@@ -7954,7 +9216,7 @@ function sweepPlay(){
     helpOpen = wasHelp; reportOpen = wasReport;
     savesDisarmed = wasDisarmed; state = real;
   }
-  return { shapes: 11, failures, ok: failures.length === 0 };
+  return { shapes: 14, failures, ok: failures.length === 0 };
 }
 
 const BK = {
