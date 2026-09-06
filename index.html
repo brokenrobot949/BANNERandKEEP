@@ -39,6 +39,10 @@ header{
 .brand{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 .brand h1{font-size:16px;margin:0;letter-spacing:.06em;font-weight:600}
 .brand .sub{font-size:11px;color:var(--dim);font-family:var(--sans);margin-left:auto;letter-spacing:.04em}
+.helpbtn{width:21px;height:21px;flex:none;padding:0;border-radius:50%;cursor:pointer;
+  border:1px solid var(--gold-dim);background:transparent;color:var(--gold);
+  font-size:12.5px;font-weight:700;line-height:1;display:grid;place-items:center}
+.helpbtn:hover{background:var(--gold-dim);color:#1a1408}
 .res{display:flex;flex-wrap:wrap;gap:4px 10px;font-family:var(--sans);font-size:12px}
 .res b{font-weight:600;font-variant-numeric:tabular-nums}
 .res .r{display:flex;align-items:center;gap:3px;color:var(--muted)}
@@ -129,8 +133,12 @@ button{font-family:var(--sans)}
 .quest.sel{border-color:var(--gold);background:var(--panel2)}
 .quest .qt{display:flex;align-items:baseline;gap:8px}
 .quest .qname{font-weight:600;font-size:14.5px}
-.quest .qtype{font-family:var(--sans);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--azure);border:1px solid var(--azure);border-radius:3px;padding:1px 5px;flex:none}
+/* Unscoped on purpose: the tutorial shows the same pill in its table of quest
+   types, and a type badge that renders as bare text there teaches the wrong
+   thing about what the player is looking for on the slate. */
+.qtype{display:inline-block;font-family:var(--sans);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--azure);border:1px solid var(--azure);
+  border-radius:3px;padding:1px 5px;flex:none}
 /* Type colour carries the risk gradient: quiet work cool, violent work hot. */
 .qtype.t-patrol{color:#6f8a7a;border-color:#6f8a7a}
 .qtype.t-investigate{color:var(--azure);border-color:var(--azure)}
@@ -168,15 +176,24 @@ button{font-family:var(--sans)}
 /* ---------- deploy drawer ---------- */
 .drawer{border:1px solid var(--gold);border-radius:var(--radius);background:var(--panel2);
   padding:11px;margin-bottom:9px}
-.hpick{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--line);cursor:pointer}
-.hpick:last-of-type{border-bottom:0}
-.hpick input{accent-color:var(--gold);width:16px;height:16px;flex:none;cursor:pointer}
+/* Whole row is the target. The selected state is a box, not a tick in a
+   column: the thing the player is choosing is the hero, so the hero lights up. */
+.hpick{display:flex;align-items:center;gap:9px;padding:7px 9px;margin-bottom:5px;cursor:pointer;
+  border:1px solid var(--line);border-radius:5px;background:var(--panel);transition:border-color .12s}
+.hpick:hover{border-color:var(--line2)}
+.hpick.sel{border-color:var(--gold);background:rgba(201,162,39,.09);
+  box-shadow:inset 0 0 0 1px var(--gold-dim)}
+.hpick .tick{width:17px;height:17px;flex:none;border-radius:3px;display:grid;place-items:center;
+  border:1px solid var(--line2);background:#0f0d0a}
+.hpick.sel .tick{border-color:var(--gold);background:var(--gold)}
+.hpick .tick svg{display:block}
 .hpick .nm{flex:1;min-width:0}
 .hpick .nm b{display:block;font-weight:600;font-size:13.5px}
+.hpick.sel .nm b{color:var(--t4)}
 .hpick .nm span{font-family:var(--sans);font-size:11px;color:var(--muted)}
 .hpick .pw{font-family:var(--sans);font-size:12px;text-align:right;flex:none}
-.hpick.busy{opacity:.42}
-.hpick.busy input{cursor:not-allowed}
+.hpick.busy{opacity:.42;cursor:default}
+.hpick.busy:hover{border-color:var(--line)}
 .readout{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-family:var(--sans);
   font-size:12px;margin:9px 0;padding:9px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .readout div{display:flex;justify-content:space-between;gap:8px}
@@ -196,9 +213,15 @@ button{font-family:var(--sans)}
 .hero .body b{display:block;font-size:14.5px;font-weight:600;line-height:1.25}
 .hero .role{display:block;font-family:var(--sans);font-size:11px;color:var(--muted)}
 .hero .st{font-family:var(--sans);font-size:11px;text-align:right;flex:none}
-.mini{height:4px;background:#0f0d0a;border-radius:2px;overflow:hidden;margin-top:4px;max-width:150px}
-.mini i{display:block;height:100%}
+/* display:block matters: height and max-width do nothing on an inline span, so
+   left as-is the fatigue bar collapsed to a hairline that read as a border. */
+.mini{display:block;height:4px;background:#0f0d0a;border:1px solid var(--line);border-radius:2px;
+  overflow:hidden;margin-top:4px;max-width:150px}
+.mini i{display:block;height:100%;transition:width 1s linear}
 .mini.fat i{background:var(--t3)}
+/* The "back in" bar, in the right-hand status column of a roster row. */
+.mini.out{width:84px;height:5px;margin-left:auto;margin-top:5px}
+.mini.out i{background:linear-gradient(90deg,var(--gold-dim),var(--gold))}
 .hero{cursor:pointer}
 .hero:hover{border-color:var(--line2);background:var(--panel2)}
 
@@ -274,6 +297,34 @@ button{font-family:var(--sans)}
   display:flex;flex-wrap:wrap;gap:3px 11px}
 .entry.fail .eh{color:var(--crimson)}
 .entry p{font-size:14px;line-height:1.62}
+
+/* ---------- the tutorial ---------- */
+.help section{margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.help section:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.help h3{color:var(--gold);margin-bottom:7px}
+.help p{margin:0 0 8px;font-size:13.5px;line-height:1.6}
+.help p:last-child{margin-bottom:0}
+.help b{color:var(--ink);font-weight:600}
+.help em{color:var(--muted)}
+.hol{margin:0 0 8px;padding-left:19px;font-size:13.5px;line-height:1.6}
+.hol li{margin-bottom:6px}
+.hdl{margin:0 0 8px;font-size:13px}
+.hdl dt{font-family:var(--sans);font-size:11.5px;color:var(--gold);margin-top:8px;
+  display:flex;align-items:center;gap:4px}
+.hdl dt:first-child{margin-top:0}
+.hdl dd{margin:2px 0 0;color:var(--muted);line-height:1.55}
+.hdl dd b{color:var(--ink)}
+/* Wide content scrolls inside itself rather than stretching the dialog. */
+.htab{width:100%;border-collapse:collapse;margin:0 0 9px;font-family:var(--sans);font-size:12px}
+.htab th{text-align:left;font-weight:600;color:var(--dim);font-size:10.5px;letter-spacing:.09em;
+  text-transform:uppercase;padding:0 8px 4px 0;border-bottom:1px solid var(--line)}
+.htab td{padding:5px 8px 5px 0;border-bottom:1px solid var(--line);vertical-align:top;
+  color:var(--ink)}
+.htab td.num{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted)}
+.htab tr:last-child td{border-bottom:0}
+.htab .hsub td{color:var(--muted);font-size:11.5px;line-height:1.5;padding-top:0;
+  border-bottom:1px solid var(--line)}
+.htab .hsub b{color:var(--t3)}
 
 /* the absence band: what the realm did while nobody was deciding anything */
 .absence{background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius);
@@ -433,6 +484,80 @@ button{font-family:var(--sans)}
       stroke-linejoin="round"/>
     <path d="M12 9.5v4.5M12 17h.01" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
   </symbol>
+  <symbol id="sym-check" viewBox="0 0 24 24">
+    <path d="M4.5 12.6l5 5.2L19.5 6.5" stroke="currentColor" stroke-width="2.8" fill="none"
+      stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <!-- ================= MAP TERRAIN =================
+       Cartographer's glyphs, drawn small and simple on purpose: on the realm
+       map these render at 16-24px over a dark ground, where an outline reads
+       and a detailed fill becomes a smudge. Each one is drawn standing on a
+       baseline near y=20 so a scattered handful still lines up like an old
+       chart rather than floating at random heights. -->
+  <symbol id="sym-t-pine" viewBox="0 0 24 24">
+    <path d="M12 2.5l5.2 7.6h-2.9l4.2 6.2H5.5l4.2-6.2H6.8L12 2.5z" fill="currentColor" opacity=".85"/>
+    <path d="M12 15.5V21" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="sym-t-oak" viewBox="0 0 24 24">
+    <path d="M12 2.8c4 0 6.8 2.8 6.8 6.4S15.6 16 12 16s-6.8-3.2-6.8-6.8S8 2.8 12 2.8z"
+      fill="currentColor" opacity=".85"/>
+    <path d="M12 14.5V21" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="sym-t-field" viewBox="0 0 24 24">
+    <path d="M2 20h20M4.5 20l3.2-7.5M10.5 20l3.2-7.5M16.5 20l3.2-7.5M7.7 12.5h11.7"
+      stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="sym-t-reed" viewBox="0 0 24 24">
+    <path d="M12 21V6.5M12 6.5c0-2 1.4-3.2 2.8-3.6M7.5 21c0-6.5 1.2-9.5 2.6-11.4M16.5 21c0-6.5-1.2-9.5-2.6-11.4"
+      stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="sym-t-water" viewBox="0 0 24 24">
+    <path d="M1.5 9c3.2-3.4 5.2 3.4 8.4 0s5.2 3.4 8.4 0M1.5 16c3.2-3.4 5.2 3.4 8.4 0s5.2 3.4 8.4 0"
+      stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="sym-t-hill" viewBox="0 0 24 24">
+    <path d="M1.5 19.5c2.6 0 3.4-6.4 6.6-6.4s4 6.4 6.6 6.4" stroke="currentColor" stroke-width="1.6"
+      fill="none" stroke-linecap="round"/>
+    <path d="M10.5 19.5c2.2 0 3-4.8 5.6-4.8s3.4 4.8 5.9 4.8" stroke="currentColor" stroke-width="1.6"
+      fill="none" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="sym-t-peak" viewBox="0 0 24 24">
+    <path d="M1.5 20.5L9 5.5l4.6 8.6 2.4-3.8 6.5 10.2H1.5z" fill="currentColor" opacity=".85"/>
+    <path d="M6.2 15l2.9-2.4 2 3.6" stroke="#16130f" stroke-width="1.3" fill="none" opacity=".55"/>
+  </symbol>
+  <symbol id="sym-t-thorn" viewBox="0 0 24 24">
+    <path d="M3.5 20.5C9.5 19 14.5 14 17 6.5" stroke="currentColor" stroke-width="1.6" fill="none"
+      stroke-linecap="round"/>
+    <path d="M7.6 17.4l-2.9-1.2M7.6 17.4l1-3M12.6 12.4l-3-.7M12.6 12.4l1-3"
+      stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="sym-t-volcano" viewBox="0 0 24 24">
+    <path d="M1.5 20.5L8.4 9.5h7.2l6.9 11H1.5z" fill="currentColor" opacity=".85"/>
+    <path d="M8.4 9.5h7.2" stroke="#16130f" stroke-width="1.5" opacity=".6"/>
+    <path d="M11 8.6c0-2.2-1.9-2.6-1.9-4.4M13.4 8.6c0-2.6 2.3-2.4 2.3-4.8" stroke="currentColor"
+      stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".7"/>
+  </symbol>
+  <symbol id="sym-t-ruin" viewBox="0 0 24 24">
+    <path d="M5 21V9.5l2.6-1.6V11h2.6V5.4l2.8 2.2V11h2.4V9.2L18.6 11v10H5z"
+      fill="currentColor" opacity=".8"/>
+    <path d="M9.6 21v-4.4h3.6V21" fill="#16130f" opacity=".55"/>
+  </symbol>
+  <symbol id="sym-t-tower" viewBox="0 0 24 24">
+    <path d="M8.2 21V7.2L7 4.6h10L15.8 7.2V21H8.2z" fill="currentColor" opacity=".85"/>
+    <path d="M10.9 15h2.2v6h-2.2z" fill="#16130f" opacity=".55"/>
+  </symbol>
+  <symbol id="sym-t-village" viewBox="0 0 24 24">
+    <path d="M1.5 20.5v-4.8l4.3-3.2 4.3 3.2v4.8H1.5z" fill="currentColor" opacity=".82"/>
+    <path d="M12 20.5v-6.4l5.2-3.8 5.3 3.8v6.4H12z" fill="currentColor" opacity=".82"/>
+  </symbol>
+  <symbol id="sym-compass" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10.6" fill="none" stroke="currentColor" stroke-width="1" opacity=".65"/>
+    <circle cx="12" cy="12" r="6.8" fill="none" stroke="currentColor" stroke-width=".8" opacity=".38"/>
+    <path d="M12 1l2.5 8.5L23 12l-8.5 2.5L12 23l-2.5-8.5L1 12l8.5-2.5L12 1z"
+      fill="currentColor" opacity=".8"/>
+    <path d="M12 1l2.5 8.5L12 12z" fill="#16130f" opacity=".5"/>
+  </symbol>
 </defs></svg>
 
 <div id="app">
@@ -441,6 +566,7 @@ button{font-family:var(--sans)}
     <svg width="17" height="17" style="color:var(--gold)"><use href="#sym-banner"/></svg>
     <h1>Banner &amp; Keep</h1>
     <span class="sub" id="hdr-day"></span>
+    <button id="help" class="helpbtn" aria-label="How to play" title="How to play">?</button>
   </div>
   <div class="res" id="res"></div>
 </header>
@@ -849,6 +975,92 @@ const CONFIG = {
 };
 
 const TIER_COUNT = CONFIG.TIERS.length;
+
+/* ------------------------------------------------------------- MAP ART ---
+   The cartography for §3's realm map: a coastline, a river, and terrain
+   glyphs placed by hand so each region reads as a PLACE before its label is
+   read -- woodland and tilled field in the west, reed and standing water in
+   the fen, broken hills and bramble in the march, cinder cones in the Reach.
+
+   Deliberately NOT in CONFIG. Nothing here is a balance number, and CONFIG's
+   dead-key assertion exists to police numbers that change the game; filling
+   it with x/y coordinates would blunt that.
+
+   Placement rule: every zone node owns roughly x +/- 78 and y -62..+90 (the
+   banner, its ring, and two lines of label beneath it). Glyphs stay out of
+   that box, which is why the scatters look like they orbit each banner.
+   ------------------------------------------------------------------------ */
+const MAP_ART = {
+  /* The shoreline, clockwise from the north-west, as CONTROL points rather
+     than a hand-tuned bezier -- smoothClosedPath() runs the curve through the
+     midpoints between them. A coast authored as one smooth blob reads as an
+     island-shaped sticker; the wobble is what makes it a place. The northern
+     bay at x=400 is deliberate: the title cartouche sits in that water. */
+  coastPts: [
+    [112, 72], [186, 44], [252, 92], [326, 88], [400, 116], [474, 90],
+    [548, 92], [622, 44], [694, 84],
+    [756, 142], [704, 214], [762, 280], [708, 346], [764, 412], [706, 478], [754, 544],
+    [688, 594], [616, 562], [544, 600], [472, 566], [400, 602], [328, 564],
+    [256, 598], [182, 562], [112, 596],
+    [46, 538], [92, 470], [38, 404], [90, 338], [36, 272], [88, 206], [42, 136]
+  ],
+  /* Rises in the western hills, runs east under the Keep, loses itself in
+     the fen. Two short distributaries at the mouth, as rivers do. */
+  river: "M104 322C168 356 236 374 300 394c56 18 120 12 170-12 50-24 70-58 96-88",
+  riverMouth: ["M552 306c14 8 28 6 42 0", "M556 322c16 4 28 0 38-8"],
+  /* [symbol, x, y, size] -- size is the glyph's box in map units. */
+  glyphs: {
+    greenhollow: [
+      ["sym-t-oak", 88, 122, 23], ["sym-t-pine", 122, 88, 21],
+      ["sym-t-oak", 84, 170, 21], ["sym-t-pine", 100, 210, 20],
+      ["sym-t-village", 114, 290, 24], ["sym-t-field", 206, 300, 23],
+      ["sym-t-oak", 288, 116, 22], ["sym-t-pine", 308, 160, 20],
+      ["sym-t-oak", 300, 218, 21], ["sym-t-field", 232, 122, 21],
+      ["sym-t-pine", 176, 88, 19]
+    ],
+    marrowfen: [
+      ["sym-t-reed", 692, 116, 21], ["sym-t-water", 728, 156, 21],
+      ["sym-t-reed", 706, 208, 20], ["sym-t-water", 662, 300, 21],
+      ["sym-t-reed", 556, 302, 20], ["sym-t-water", 506, 196, 20],
+      ["sym-t-reed", 512, 132, 19], ["sym-t-water", 598, 100, 21],
+      ["sym-t-reed", 662, 96, 19], ["sym-t-ruin", 712, 246, 21]
+    ],
+    thornmarch: [
+      ["sym-t-peak", 88, 366, 24], ["sym-t-peak", 124, 340, 21],
+      ["sym-t-peak", 72, 412, 22], ["sym-t-thorn", 96, 474, 20],
+      ["sym-t-ruin", 92, 524, 21], ["sym-t-hill", 156, 552, 22],
+      ["sym-t-thorn", 252, 556, 20], ["sym-t-peak", 294, 390, 22],
+      ["sym-t-hill", 302, 458, 21], ["sym-t-thorn", 286, 518, 20],
+      ["sym-t-peak", 232, 346, 21]
+    ],
+    ashenreach: [
+      ["sym-t-volcano", 700, 392, 25], ["sym-t-volcano", 510, 412, 22],
+      ["sym-t-ruin", 700, 468, 21], ["sym-t-thorn", 494, 488, 20],
+      ["sym-t-volcano", 604, 552, 23], ["sym-t-ruin", 512, 556, 20],
+      ["sym-t-peak", 714, 520, 21], ["sym-t-volcano", 558, 348, 21],
+      ["sym-t-thorn", 690, 338, 19]
+    ]
+  },
+  /* The Keep's own holdings: the only settled ground on the map. */
+  demesne: [
+    ["sym-t-tower", 404, 200, 21], ["sym-t-field", 336, 230, 20],
+    ["sym-t-village", 474, 264, 22], ["sym-t-hill", 332, 400, 20],
+    ["sym-t-village", 472, 378, 21]
+  ],
+  sea: [[22, 62, 18], [20, 302, 18], [30, 574, 18], [774, 110, 17],
+        [778, 302, 17], [764, 556, 17], [400, 30, 17], [614, 26, 16]],
+  /* Region colour is a soft radial cast, not a filled shape. Four tinted lobes
+     drawn as paths read as four DISCS sitting on the land -- the eye finds the
+     edge and calls it a border. A gradient with no edge colours the ground the
+     way a printed map does, and lets terrain and banner do the dividing. */
+  tint: { greenhollow:"93,138,69", marrowfen:"74,125,138",
+          thornmarch:"169,154,134", ashenreach:"196,122,74" },
+  tintRadius: 250,
+  /* Sizes above are authored in map units; the map renders about 0.5x on a
+     phone, so a 21-unit tree arrives as 11 real pixels and reads as lint.
+     One multiplier here keeps the hand-placed proportions and fixes the scale. */
+  glyphScale: 1.55
+};
 
 /* ------------------------------------------------------------- CONTENT --
    Phase 1 ships one quest type. Names and briefing lines are content data,
@@ -1735,6 +1947,10 @@ function sanitizeLoaded(data){
   data.pendingReports = Array.isArray(data.pendingReports) ? data.pendingReports : [];
   // An absence summary saved by an older build may be missing its parts.
   if (!Array.isArray(data.pendingIgnored)) data.pendingIgnored = [];
+  // An existing save is an existing player: default them to having seen the
+  // tutorial rather than ambushing them with it on the load after an update.
+  // Only newGame() sets this false, so only a genuinely new Keep is taught.
+  if (typeof data.seenHelp !== "boolean") data.seenHelp = true;
   if (data.pendingAbsence && typeof data.pendingAbsence === "object"){
     const a = data.pendingAbsence;
     if (typeof a.elapsedMs !== "number" || !isFinite(a.elapsedMs)) a.elapsedMs = 0;
@@ -1813,6 +2029,7 @@ function newGame(){
     pendingAbsence: null,
     pendingIgnored: [],
     won: false,
+    seenHelp: false,        // a brand new lord gets the tutorial once, unasked
     questSeq: 1
   };
   // The slate builders read the global `state` (questSeq, active Patrols), so it
@@ -2324,6 +2541,24 @@ function previewQuest(quest, heroes){
   const stagesN = type.stages || 1;
   const injMod = eventEffect(zs, "injuryMult", 1) * partyInjuryMult(heroes);
   const injuries = heroes.map(h => {
+    // A hero who is ALREADY hurt does not roll the danger-derived chance at
+    // all. §7's rule, and resolveQuest's own code, is that the existing wound
+    // worsens by one step at a flat rate or it does not -- there is no fresh
+    // wound to take. So the danger figure is not what will be rolled for them,
+    // and quoting it was wrong in both directions: it understated a Light wound
+    // in Greenhollow (9% shown, 30% real) and, worse, told a GRIEVOUS hero they
+    // faced up to 60% when they have nothing left to worsen into and their true
+    // risk is zero. That number talked players out of exactly the send the
+    // design exists to permit -- a maimed hero is still the right person for a
+    // Court. Found by running the assertion suite against a wounded roster.
+    const already = injuryDef(h.injury.severity);
+    if (already){
+      const order = CONFIG.INJURY_SEVERITIES;
+      const worsenable = order.findIndex(s => s.id === already.id) < order.length - 1;
+      const p = worsenable ? CONFIG.INJURY_WORSEN_CHANCE : 0;
+      return { hero: h, perOk: p, perFail: p, expected: p, worst: p,
+               worsens: true, worsenable: worsenable };
+    }
     const perOk   = injuryChance(h, zd.danger, ratio, staff, false, locked, quest.zoneId, quest.type, injMod);
     const perFail = injuryChance(h, zd.danger, ratio, staff, true,  locked, quest.zoneId, quest.type, injMod);
     const odds = injuryOutcomeOdds(perOk, perFail, chance, stagesN);
@@ -2921,7 +3156,11 @@ function toast(msg){
 
 function setView(v){
   currentView = v;
-  if (v !== "map") openZone = null;
+  // Leaving the map closes the zone, so the open quest and its half-made party
+  // have to go with it. Only the zone panel's own back button used to clear
+  // these, so leaving by the bottom nav and coming back re-opened the drawer
+  // with the previous picks still lit on what looks like a fresh screen.
+  if (v !== "map"){ openZone = null; selectedQuest = null; picked.clear(); }
   if (v !== "roster") openHero = null;
   ["map","roster","keep"].forEach(n => {
     $("#v-" + n).hidden = n !== v;
@@ -2961,31 +3200,131 @@ function bannerScale(tIdx){
     (CONFIG.BANNER_MAX_SCALE - CONFIG.BANNER_MIN_SCALE) * (tIdx / (TIER_COUNT - 1));
 }
 const TIER_COLOR = ["var(--t0)","var(--t1)","var(--t2)","var(--t3)","var(--t4)"];
+/* Ink for each region's terrain. Muted well below the banner colours on
+   purpose: the glyphs are the ground, and the banner has to stay the brightest
+   thing in its own quarter or the map stops answering "how am I doing?". */
+const TERRAIN_INK = { greenhollow:"#5f7a46", marrowfen:"#4b6b74",
+                      thornmarch:"#7d7263",  ashenreach:"#8f5638" };
+
+/* A closed curve through a list of points, quadratic through the midpoints:
+   every authored point is a CONTROL point and the curve passes between them.
+   That is what turns a plain coordinate list into a coastline -- authoring
+   beziers by hand for a shape this size is where map art goes to die. */
+function smoothClosedPath(pts){
+  const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  const m0 = mid(pts[pts.length - 1], pts[0]);
+  let d = "M" + round1(m0[0]) + " " + round1(m0[1]);
+  for (let i = 0; i < pts.length; i++){
+    const c = pts[i], m = mid(c, pts[(i + 1) % pts.length]);
+    d += "Q" + round1(c[0]) + " " + round1(c[1]) + " " + round1(m[0]) + " " + round1(m[1]);
+  }
+  return d + "Z";
+}
 
 function renderMap(){
   const v = $("#v-map");
   if (openZone){ renderZonePanel(v); return; }
   v.innerHTML = "";
+  const coast = smoothClosedPath(MAP_ART.coastPts);
 
-  const adj = [["greenhollow","marrowfen"],["marrowfen","ashenreach"],
-               ["ashenreach","thornmarch"],["thornmarch","greenhollow"]];
   let g = '<svg id="map-svg" viewBox="0 0 800 620" role="img" ' +
           'aria-label="Map of the realm. Tap a zone to open it.">';
 
-  // adjacency + spokes
-  adj.forEach(([a, b]) => {
-    const za = zoneDef(a), zb = zoneDef(b);
-    g += '<line x1="' + za.x + '" y1="' + za.y + '" x2="' + zb.x + '" y2="' + zb.y +
-         '" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 6"/>';
-  });
+  // --- the land -----------------------------------------------------------
+  // Sea first, then the coast, then a second shoreline traced just outside it.
+  // That offset line is the whole trick of a hand-drawn chart: one stroke is a
+  // silhouette, two are a coastline.
+  g += '<defs>';
   CONFIG.ZONES.forEach(z => {
-    g += '<line x1="400" y1="310" x2="' + z.x + '" y2="' + z.y +
-         '" stroke="var(--line2)" stroke-width="1.5"/>';
+    g += '<radialGradient id="rg-' + z.id + '" gradientUnits="userSpaceOnUse" cx="' + z.x +
+         '" cy="' + z.y + '" r="' + MAP_ART.tintRadius + '">' +
+         '<stop offset="0" stop-color="rgba(' + MAP_ART.tint[z.id] + ',.20)"/>' +
+         '<stop offset=".55" stop-color="rgba(' + MAP_ART.tint[z.id] + ',.09)"/>' +
+         '<stop offset="1" stop-color="rgba(' + MAP_ART.tint[z.id] + ',0)"/>' +
+         '</radialGradient>';
+  });
+  g += '<clipPath id="landclip"><path d="' + coast + '"/></clipPath></defs>';
+
+  g += '<rect x="0" y="0" width="800" height="620" fill="#080706"/>';
+  g += '<path d="' + coast + '" fill="none" stroke="var(--line)" stroke-width="1.1" ' +
+       'opacity=".55" transform="translate(400,310) scale(1.028) translate(-400,-310)"/>';
+  g += '<path d="' + coast + '" fill="none" stroke="var(--line)" stroke-width=".9" ' +
+       'opacity=".35" transform="translate(400,310) scale(1.055) translate(-400,-310)"/>';
+  g += '<path d="' + coast + '" fill="#1a1610" stroke="#6a5936" stroke-width="1.8"/>';
+
+  // Region colour, clipped to the land so the cast stops at the shore.
+  CONFIG.ZONES.forEach(z => {
+    g += '<rect x="0" y="0" width="800" height="620" fill="url(#rg-' + z.id +
+         ')" clip-path="url(#landclip)"/>';
   });
 
+  // marches: the four borders meeting at the Keep, the way a territorial map
+  // draws them -- not lines between the zones, which drew a diamond nothing in
+  // the game actually means (adjacency effects are deferred by DESIGN.md §14).
+  [[400, 104], [716, 310], [400, 522], [84, 310]].forEach(([x, y]) => {
+    g += '<line x1="400" y1="310" x2="' + x + '" y2="' + y + '" stroke="#6a5936" ' +
+         'stroke-width="1.6" stroke-dasharray="2 10" stroke-linecap="round" opacity=".8"/>';
+  });
+
+  g += '<path d="' + MAP_ART.river + '" fill="none" stroke="#3c5560" stroke-width="2.6" ' +
+       'stroke-linecap="round" opacity=".8"/>';
+  MAP_ART.riverMouth.forEach(d => {
+    g += '<path d="' + d + '" fill="none" stroke="#3c5560" stroke-width="1.7" ' +
+         'stroke-linecap="round" opacity=".65"/>';
+  });
+
+  // roads, bowed rather than ruled: the Keep reaches every zone, and a straight
+  // line between two points is the one thing no real road has ever been.
+  CONFIG.ZONES.forEach(z => {
+    const dx = z.x - 400, dy = z.y - 310, len = Math.hypot(dx, dy) || 1;
+    const cx = (400 + z.x) / 2 - (dy / len) * 26;
+    const cy = (310 + z.y) / 2 + (dx / len) * 26;
+    g += '<path d="M400 310Q' + round1(cx) + ' ' + round1(cy) + ' ' + z.x + ' ' + z.y +
+         '" fill="none" stroke="var(--line2)" stroke-width="1.7" stroke-dasharray="1 7" ' +
+         'stroke-linecap="round" opacity=".8"/>';
+  });
+
+  // --- terrain ------------------------------------------------------------
+  const glyph = (sym, x, y, s0, col, op) => {
+    const s = s0 * MAP_ART.glyphScale;
+    return '<g transform="translate(' + round1(x - s / 2) + ',' + round1(y - s / 2) +
+      ')" style="color:' + col + '" opacity="' + op + '">' +
+      '<svg width="' + round1(s) + '" height="' + round1(s) + '" viewBox="0 0 24 24">' +
+      '<use href="#' + sym + '"/></svg></g>';
+  };
+
+  MAP_ART.sea.forEach(([x, y, s]) => { g += glyph("sym-t-water", x, y, s, "#33505c", ".85"); });
+  CONFIG.ZONES.forEach(z => {
+    const col = TERRAIN_INK[z.id];
+    MAP_ART.glyphs[z.id].forEach(([sym, x, y, s]) => { g += glyph(sym, x, y, s, col, ".85"); });
+  });
+  MAP_ART.demesne.forEach(([sym, x, y, s]) => { g += glyph(sym, x, y, s, "#8b7a5e", ".8"); });
+
+  // --- frame, title and compass -------------------------------------------
+  g += '<rect x="7" y="7" width="786" height="606" fill="none" stroke="var(--line2)" ' +
+       'stroke-width="1.6" opacity=".8"/>' +
+       '<rect x="13" y="13" width="774" height="594" fill="none" stroke="var(--line)" ' +
+       'stroke-width="1" opacity=".7"/>';
+  [[13, 13], [787, 13], [13, 607], [787, 607]].forEach(([x, y]) => {
+    g += '<circle cx="' + x + '" cy="' + y + '" r="3.4" fill="var(--gold-dim)" opacity=".75"/>';
+  });
+  // The cartouche sits in the northern bay, which is why that bay is there.
+  g += '<g><path d="M292 38h216l11 16-11 16H292l-11-16 11-16z" fill="#0d0b09" ' +
+       'stroke="var(--gold-dim)" stroke-width="1.1" opacity=".95"/>' +
+       '<text x="400" y="59" text-anchor="middle" fill="var(--gold)" font-family="var(--sans)" ' +
+       'font-size="12" letter-spacing="3.4">THE BORDER MARCHES</text></g>';
+  // Compass on land, south of the Keep: the one genuinely empty acre on the
+  // map, and where a chart has always put it.
+  g += '<g transform="translate(377,447)" style="color:var(--gold-dim)" opacity=".75">' +
+       '<svg width="46" height="46" viewBox="0 0 24 24"><use href="#sym-compass"/></svg></g>' +
+       '<text x="400" y="440" text-anchor="middle" fill="var(--gold-dim)" ' +
+       'font-family="var(--sans)" font-size="10.5" letter-spacing="1.6" opacity=".95">N</text>';
+
   // the Keep
-  g += '<g><circle cx="400" cy="310" r="34" fill="var(--panel2)" stroke="var(--gold-dim)" ' +
-       'stroke-width="1.5"/><g transform="translate(378,288)" style="color:var(--gold)">' +
+  g += '<g><circle cx="400" cy="310" r="38" fill="#15120e" stroke="var(--gold-dim)" ' +
+       'stroke-width="1.5"/><circle cx="400" cy="310" r="32" fill="none" ' +
+       'stroke="var(--gold-dim)" stroke-width=".8" opacity=".6"/>' +
+       '<g transform="translate(378,288)" style="color:var(--gold)">' +
        '<svg width="44" height="44" viewBox="0 0 24 24"><use href="#sym-keep"/></svg></g>' +
        '<text x="400" y="368" text-anchor="middle" fill="var(--muted)" ' +
        'font-family="var(--sans)" font-size="13" letter-spacing="1.5">THE KEEP</text></g>';
@@ -3003,8 +3342,13 @@ function renderMap(){
     g += '<g class="zone-hit" tabindex="0" role="button" data-zone="' + zs.id + '" ' +
          'aria-label="' + zd.name + ', ' + (locked ? "held by " + zd.rivalName
            : CONFIG.TIERS[ti].name + ", influence " + Math.round(zs.influence)) + '">';
+    // The disc is opaque, not translucent: the terrain behind it is decoration
+    // and the banner is the reading. A tinted glass panel let cinder cones show
+    // through the one glyph that has to be unmistakable at a glance.
     g += '<circle class="zring" cx="' + zd.x + '" cy="' + zd.y + '" r="46" ' +
-         'fill="var(--panel)" stroke="' + col + '" stroke-width="1.5" stroke-opacity=".55"/>';
+         'fill="#15120e" stroke="' + col + '" stroke-width="1.5" stroke-opacity=".55"/>';
+    g += '<circle cx="' + zd.x + '" cy="' + zd.y + '" r="40" fill="none" stroke="' + col +
+         '" stroke-width=".8" stroke-opacity=".3"/>';
     g += '<g transform="translate(' + (zd.x - bw / 2) + ',' + (zd.y - bh / 2 - 4) + ')" ' +
          'style="color:' + col + '" opacity="' + op.toFixed(2) + '">' +
          '<svg width="' + bw + '" height="' + bh + '" viewBox="0 0 24 24">' +
@@ -3246,6 +3590,18 @@ function renderZonePanel(v){
 /* ----------------------------------------------------- deploy drawer ----- */
 function renderDrawer(q){
   const d = el("div", "drawer");
+  // Prune before anything reads the set. The preview counted every picked id
+  // while Send filtered by isAvailable(), so the two disagreed by construction:
+  // a picked hero who became unavailable would leave the drawer quoting a
+  // three-hero party and deploying two, with no warning and no understaffing
+  // notice. Nothing in single-tab play can currently move a picked hero out
+  // from under the player -- but "currently unreachable" is not a reason for
+  // two code paths to answer the same question differently, and this is the one
+  // readout the design calls load-bearing.
+  [...picked].forEach(id => {
+    const h = heroOf(id);
+    if (!h || !isAvailable(h)) picked.delete(id);
+  });
   const chosen = state.heroes.filter(h => picked.has(h.id));
   const pv = chosen.length ? previewQuest(q, chosen) : null;
   const ctx = { zoneId: q.zoneId, danger: zoneDef(q.zoneId).danger, failed: false };
@@ -3265,9 +3621,14 @@ function renderDrawer(q){
     const inj = injuryDef(hero.injury.severity);
     let note = hero.cls + " · " + hero.role;
     if (busy) note = "in the field";
-    else if (inj) note = inj.name.toLowerCase() + " wound · " +
-      pct(CONFIG.INJURY_WORSEN_CHANCE) + " to worsen if sent · heals in " +
-      fmtDur(hero.injury.healsAt - nowMs()) + " resting";
+    else if (inj){
+      const sevs = CONFIG.INJURY_SEVERITIES;
+      const canWorsen = sevs.findIndex(s => s.id === inj.id) < sevs.length - 1;
+      note = inj.name.toLowerCase() + " wound · " +
+        (canWorsen ? pct(CONFIG.INJURY_WORSEN_CHANCE) + " to worsen if sent"
+                   : "cannot get worse") +
+        " · heals in " + fmtDur(hero.injury.healsAt - nowMs()) + " resting";
+    }
     // Power shown here is power IN THIS ZONE, traits included -- Fen-Wise has to
     // be visible as a number at the moment the party is being chosen, or the
     // trait may as well not exist.
@@ -3276,9 +3637,13 @@ function renderDrawer(q){
     const swing = here > flat ? ' <span class="good">▲</span>'
                 : here < flat ? ' <span class="bad">▼</span>' : '';
     const counters = q.counterRole && hero.role === q.counterRole;
-    h += '<label class="hpick' + (busy ? " busy" : "") + '">' +
-      '<input type="checkbox" data-h="' + hero.id + '"' +
-        (picked.has(hero.id) ? " checked" : "") + (busy ? " disabled" : "") + '>' +
+    const on = picked.has(hero.id);
+    // Tap the hero, not a box beside them. The tick is kept as a second,
+    // non-colour signal -- selection that is ONLY a border tint disappears for
+    // anyone who cannot separate gold from brown.
+    h += '<div class="hpick' + (busy ? " busy" : "") + (on ? " sel" : "") +
+      '" data-h="' + hero.id + '">' +
+      '<span class="tick">' + (on ? icon("sym-check", 11, "#1a1408") : "") + '</span>' +
       '<span class="nm"><b>' + hero.name + '</b><span>' + note + '</span>' +
         '<span class="chips">' +
           (counters ? '<span class="chip home">counters the quarry</span>' : '') +
@@ -3288,7 +3653,7 @@ function renderDrawer(q){
         '</span></span>' +
       '<span class="pw">' + icon("sym-sword", 11, "var(--muted)") + " " + here + swing +
         (hero.fatigue > 0 ? '<br><span class="dim">fatigue ' + Math.round(hero.fatigue) + '</span>' : '') +
-      '</span></label>';
+      '</span></div>';
   });
 
   if (pv){
@@ -3321,14 +3686,26 @@ function renderDrawer(q){
           ? 'A ' + q.counterRole + ' is with them — ' + pct(pv.counter - 1) + ' more effective against ' + q.quarry + '.'
           : 'No ' + q.counterRole + ' in the party — ' + pct(1 - pv.counter) +
             ' less effective against ' + q.quarry + '. Allowed, never advised.') + '</div>';
-    const wounded = chosen.filter(x => x.injury.severity);
-    if (wounded.length)
+    // Split by whether the wound can actually get worse. Telling someone their
+    // Grievous hero has a 30% chance of worsening is simply false -- there is no
+    // step below it -- and it is the sentence that stops the wounded roster ever
+    // being used for the Guile and Grace work it is still perfectly good at.
+    const worsenable = pv.injuries.filter(i => i.worsens && i.worsenable).map(i => i.hero);
+    const maxed     = pv.injuries.filter(i => i.worsens && !i.worsenable).map(i => i.hero);
+    if (worsenable.length)
       h += '<div class="tiny bad" style="margin-bottom:7px">' + icon("sym-warn", 11) +
-        ' ' + wounded.map(x => x.name).join(", ") +
-        (wounded.length > 1 ? " are" : " is") + ' already hurt. Each carries a <b>' +
+        ' ' + nameList(worsenable.map(x => x.name)) +
+        (worsenable.length > 1
+          ? ' are already hurt, and each carries a <b>'
+          : ' is already hurt, and carries a <b>') +
         pct(CONFIG.INJURY_WORSEN_CHANCE) + '</b> chance the wound worsens instead of ' +
-        'healing, and <b>a wound does not heal in the field at all</b> — the clock ' +
+        'healing. <b>A wound does not heal in the field at all</b> — the clock ' +
         'only runs at the Keep.</div>';
+    if (maxed.length)
+      h += '<div class="tiny warn" style="margin-bottom:7px">' + icon("sym-warn", 11) +
+        ' ' + nameList(maxed.map(x => x.name)) + (maxed.length > 1 ? " are" : " is") +
+        ' as badly hurt as it goes — there is nothing worse to take out there, ' +
+        'and nothing mends until they are back at the Keep.</div>';
     if (pv.staff.missing)
       h += '<div class="tiny bad" style="margin-bottom:7px">' + icon("sym-warn", 11) +
         ' Understaffed by ' + pv.staff.missing + ' — party power cut to ' +
@@ -3344,11 +3721,25 @@ function renderDrawer(q){
        'Send ' + (chosen.length || "") + '</button>';
   d.innerHTML = h;
 
-  d.querySelectorAll("input[data-h]").forEach(inp => {
-    inp.onchange = () => {
-      if (inp.checked) picked.add(inp.dataset.h); else picked.delete(inp.dataset.h);
+  d.querySelectorAll(".hpick[data-h]").forEach(row => {
+    const id = row.dataset.h;
+    // A hero in the field is shown, greyed, and simply is not a control: no
+    // handler at all, so the keyboard-reachability assertion has nothing to
+    // complain about and Tab does not stop on something that cannot be used.
+    if (row.classList.contains("busy")){
+      row.setAttribute("aria-disabled", "true");
+      // Say so explicitly. Leaving it unset let a row carry the "sel" class
+      // while announcing no pressed state at all -- the screen reader and the
+      // screen disagreeing about the same row.
+      row.setAttribute("aria-pressed", "false");
+      return;
+    }
+    const hero = heroOf(id) || { name:"" };
+    activatable(row, (picked.has(id) ? "Stand down " : "Send ") + hero.name, () => {
+      if (picked.has(id)) picked.delete(id); else picked.add(id);
       render();
-    };
+    });
+    row.setAttribute("aria-pressed", String(picked.has(id)));
   });
   d.querySelector("#go").onclick = () => {
     const heroes = state.heroes.filter(x => picked.has(x.id) && isAvailable(x));
@@ -3366,9 +3757,18 @@ function heroStatusLine(h){
   const inj = injuryDef(h.injury.severity);
   if (h.status === "deployed"){
     const aq = state.activeQuests.find(q => q.heroIds.includes(h.id));
-    return { cls:"warn", html: aq
-      ? 'back in <span class="num" data-until="' + aq.completesAt + '">' +
-        fmtDur(aq.completesAt - nowMs()) + '</span>' : "in the field" };
+    if (!aq) return { cls:"warn", html:"in the field" };
+    // The bar is what makes "back in 4h 12m" answerable at a glance: a number
+    // alone says how long is left, not how much of the trip is already spent.
+    // data-prog is driven by updateTimers(), the same pass that moves the text,
+    // so the two can never disagree.
+    const span = Math.max(1, aq.completesAt - aq.startedAt);
+    const done = clamp(0, 100, ((nowMs() - aq.startedAt) / span) * 100);
+    return { cls:"warn", html:
+      'back in <span class="num" data-until="' + aq.completesAt + '">' +
+      fmtDur(aq.completesAt - nowMs()) + '</span>' +
+      '<span class="mini out"><i style="width:' + round1(done) + '%" data-prog="' +
+      aq.startedAt + ',' + aq.completesAt + '"></i></span>' };
   }
   if (inj) return { cls:"bad", html: inj.name +
     '<br><span class="dim">heals in <span class="num" data-until="' + h.injury.healsAt +
@@ -3723,10 +4123,292 @@ function renderKeep(){
   });
 }
 
+/* Escape closes; Tab stays inside. ONE implementation, shared by the return
+   report and the tutorial: the scrim covers the page but everything behind it
+   stays keyboard-reachable otherwise, so a Tab-happy player could deploy a
+   quest through a dialog that is nominally the only thing on screen. Shipping a
+   second, subtly different copy for the second dialog is exactly how the first
+   one broke.
+
+   `[href]` must NOT appear in the selector: it also matches every SVG <use>
+   icon in a dialog body, a bare <use> is never a Tab stop and ignores focus(),
+   so the computed `first` was unreachable, the backward wrap never fired, and
+   Shift+Tab walked straight out onto the live page. Anchors specifically, and
+   drop anything not actually rendered. */
+function trapFocus(scrim, close){
+  scrim.onkeydown = e => {
+    if (e.key === "Escape"){ close(); return; }
+    if (e.key !== "Tab") return;
+    const focusable = [...scrim.querySelectorAll(CONFIG.MODAL_FOCUS_SELECTOR)]
+      .filter(n => n.getClientRects().length > 0 && !n.disabled);
+    if (!focusable.length) return;
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  };
+}
+
+/* =============================================================== HELP =====
+   The tutorial behind the ? in the header. Everything numeric in here is read
+   out of CONFIG at render time rather than typed into the prose: a tutorial
+   that hardcodes "decay is 0.5 an hour" is a lie waiting for the next retune,
+   and this project has already learned that lesson twice with assertions that
+   hardcoded a base rate. Two assertions guard it -- one that it names every
+   system, one that it still states the design's own literals.
+   ========================================================================= */
+const ORDINALS = ["no", "one", "two", "three", "four", "five", "six", "seven",
+                  "eight", "nine", "ten"];
+const spell = n => (n >= 0 && n < ORDINALS.length) ? ORDINALS[n] : String(n);
+
+function helpSections(){
+  const S = [];
+  const add = (title, html) => S.push({ title: title, html: html });
+  const tierName = i => CONFIG.TIERS[i].name;
+  const dl = rows => '<dl class="hdl">' + rows.map(r =>
+    '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join("") + '</dl>';
+
+  add("What you are doing", '<p>You are the lord of a Keep on the edge of a realm ' +
+    'that is coming apart. <b>You never fight.</b> You decide which of your heroes ' +
+    'goes where, and you live with it.</p>' +
+    '<p>Standing in each of the ' + spell(CONFIG.ZONES.length) + ' regions of the map ' +
+    'slips away on its own while you are not holding it up, so there is always more ' +
+    'ground than there are people. The only real question this game asks is ' +
+    '<b>what are you willing to lose today?</b></p>');
+
+  add("The loop", '<ol class="hol">' +
+    '<li><b>Realm</b> — the map. Each region shows its banner (your standing), the ' +
+      'rival pressing on it, and how dangerous it is.</li>' +
+    '<li>Tap a region to open it. It holds a <b>slate</b> of jobs, which turns over ' +
+      'on its own and whose entries <b>expire</b>. What is on the board is a real ' +
+      'constraint, not a menu.</li>' +
+    '<li>Tap a job, then <b>tap the heroes you want to send</b>. The panel shows the ' +
+      'party&rsquo;s strength, the odds, the hurt risk and what it pays <em>before</em> ' +
+      'you commit. Those numbers are the game — read them.</li>' +
+    '<li>They travel on a real clock. When they come back you get a report of what ' +
+      'happened, written as a story rather than a receipt.</li></ol>' +
+    '<p>The Keep keeps running with the tab closed. Come back after a day away and ' +
+    'the report covers the whole absence — though decay is only ever charged for the ' +
+    'first <b>' + CONFIG.OFFLINE_DECAY_CAP_H + ' hours</b> of it, however long you were gone.</p>');
+
+  add("The banner: your standing", '<p>Every region carries an influence score from ' +
+    '0 to ' + CONFIG.INFLUENCE_MAX + '. It rises when a job succeeds, falls by <b>' +
+    CONFIG.FAIL_INFLUENCE_PENALTY + '</b> when one fails, and <b>decays every hour ' +
+    'on its own</b>. The tier it sits in is the headline you see everywhere.</p>' +
+    '<table class="htab"><tr><th>Tier</th><th>From</th><th>Decays</th></tr>' +
+    CONFIG.TIERS.map((t, i) => '<tr><td><span class="tier t' + i + '">' + t.name +
+      '</span></td><td class="num">' + t.min + '</td><td class="num">' +
+      (t.decayPerHour ? round1(t.decayPerHour * 24) + " / day" : "nothing") +
+      '</td></tr>').join("") + '</table>' +
+    '<p><b>Decay rises with the tier.</b> The better you are doing somewhere, the more ' +
+    'it costs to stay there — which is why holding four regions at once is the hard ' +
+    'thing this game is about, and why a region nobody has heard of costs nothing.</p>' +
+    '<p>A <b>Patrol</b> running in a region halves its decay for as long as it lasts. ' +
+    'Posting one before you close the tab is the cheapest thing you can do.</p>');
+
+  add("Danger, rivals and raids", '<p>The diamonds beside a region are its ' +
+    '<b>danger</b>, ' + CONFIG.ZONES.map(z => z.name + " " + z.danger).join(" · ") +
+    '. Danger raises every job&rsquo;s difficulty and everyone&rsquo;s chance of ' +
+    'being hurt. It is the whole reason the map is not four copies of the same place.</p>' +
+    '<p>Each region also has someone else who wants it. The <b>rival</b> track climbs ' +
+    'as your standing decays and by <b>' + CONFIG.RIVAL_GAIN_ON_FAIL + '</b> every ' +
+    'time a job there fails.</p>' + dl([
+      ["Rival " + CONFIG.INCURSION_RIVAL_MIN + "+",
+       "They start raiding. A raid appears on the slate and expires in " +
+       Math.round(CONFIG.INCURSION_EXPIRY_MS / 3600000) + " hours. Answer it and " +
+       "the rival falls back <b>" + CONFIG.INCURSION_ANSWERED_RIVAL + "</b> — the only " +
+       "thing in the game that pushes a rival down. Ignore it and they take gold and " +
+       "materials on the way past."],
+      ["Rival " + CONFIG.RIVAL_LOCK_AT + "+",
+       "The region is <b>Contested</b>: work there is " +
+       pct(CONFIG.RIVAL_LOCK_DIFFICULTY_MULT - 1) + " harder, " +
+       pct(CONFIG.RIVAL_LOCK_INJURY_MULT - 1) + " more dangerous and pays " +
+       pct(CONFIG.RIVAL_LOCK_REWARD_MULT) + ". It is never closed to you."]
+    ]));
+
+  add("What the weather is doing", '<p>One event is always live in each region and ' +
+    'rotates on its own. Watch for these — they are short, and they change which job ' +
+    'is the right job.</p>' + dl(Object.keys(CONFIG.ZONE_EVENTS).map(id => {
+      const e = CONFIG.ZONE_EVENTS[id];
+      // The blurb is authored flavour sitting beside its own multipliers, so it
+      // can drift from them on the next rebalance ("Double reward" surviving a
+      // retune to 1.5x, with nothing to catch it). The effects line underneath
+      // is DERIVED, so whatever the blurb says the real numbers are here.
+      const fx = [];
+      if (e.decayMult !== undefined)  fx.push("decay " + pct(e.decayMult));
+      if (e.rewardMult !== undefined) fx.push("gold and materials " + pct(e.rewardMult));
+      if (e.injuryMult !== undefined) fx.push("injury risk " + pct(e.injuryMult));
+      if (e.courtInfluenceMult !== undefined)
+        fx.push("Court standing " + round1(e.courtInfluenceMult) + "x");
+      if (e.warfrontReq !== undefined)
+        fx.push("Warfront needs " + Math.abs(e.warfrontReq) +
+                (e.warfrontReq < 0 ? " fewer" : " more"));
+      return ['<span class="ev e-' + id + '">' + e.name + '</span>',
+              e.blurb + '<br><span class="dim">' + fx.join(" · ") + ' · runs ' +
+              e.minH + "-" + e.maxH + ' hours</span>'];
+    })));
+
+  add("The work", '<p>Every type tests a different derived stat, so the right hero ' +
+    'for a job is rarely the strongest one on the roster.</p>' +
+    '<table class="htab"><tr><th>Type</th><th>Sends</th><th>Tests</th></tr>' +
+    Object.keys(CONFIG.QUEST_TYPES).map(id => {
+      const t = CONFIG.QUEST_TYPES[id];
+      return '<tr><td><span class="qtype t-' + id + '">' + t.name + '</span></td>' +
+        '<td class="num">' + (t.min === t.max ? t.min : t.min + "-" + t.max) + '</td>' +
+        '<td>' + DERIVED[t.stat].name + '</td></tr>' +
+        '<tr class="hsub"><td colspan="3">' + t.blurb +
+        (t.minTier ? ' <b>Needs ' + tierName(t.minTier) + ' standing.</b>' : '') + '</td></tr>';
+    }).join("") + '</table>' +
+    '<p>Send fewer than a job asks for and the party is weakened by <b>' +
+    pct(CONFIG.UNDERSTAFF_POWER_PER_HERO) + ' a head</b> but never refused. Send more ' +
+    'and it goes faster and safer, down to a floor. Both are allowed; the panel shows ' +
+    'you the cost either way.</p>');
+
+  add("Your heroes", '<p>Five attributes — <b>Might, Agility, Wits, Spirit, ' +
+    'Presence</b> — combine into the ' + spell(Object.keys(DERIVED).length) +
+    ' stats the work actually tests:</p>' +
+    dl([["Power", "Might + Agility. Clear, Hunt, Delve."],
+        ["Guile", "Wits + Agility. Investigate."],
+        ["Grace", "Presence + Spirit. Court."],
+        ["Endurance", "Might + Spirit. Patrol."],
+        ["Muster", "All five. Warfront — no specialist can carry one alone."]]) +
+    '<p><b>Traits</b> are the part that makes a roster a cast. Local is worth ' +
+    pct(CONFIG.TRAIT_VALUES.localInfluence) + ' more standing in one region and ' +
+    'nothing anywhere else; Fen-Wise is only Marrowfen; Sure-Footed is only ' +
+    'Thornmarch. The deploy panel shows each hero&rsquo;s strength <b>in the region ' +
+    'you are looking at</b>, with an arrow when a trait has moved it.</p>' +
+    '<p><b>Levels.</b> Experience accrues only while a hero is <em>resting at the ' +
+    'Keep</em>, and only once you have built a Training Yard. Each level raises one ' +
+    'attribute. At level <b>' + CONFIG.SUBCLASS_LEVEL + '</b> a hero branches into one ' +
+    'of two specialisations, permanently. Level ' + CONFIG.LEVEL_MAX + ' is the ceiling.</p>');
+
+  add("Wounds, fatigue and Marks", '<p>This is the price of the whole game, so it is ' +
+    'worth reading properly.</p>' +
+    '<table class="htab"><tr><th>Wound</th><th>Costs</th><th>Heals in</th></tr>' +
+    CONFIG.INJURY_SEVERITIES.map(s => '<tr><td>' + s.name + '</td><td class="num">-' +
+      pct(s.powerPenalty) + '</td><td class="num">' + s.healHours + 'h</td></tr>').join("") +
+    '</table>' +
+    '<p>A wound bites <b>Power, Endurance and Muster only</b>. A grievously hurt ' +
+    'diplomat is still exactly the right person to send to a funeral — the wounded ' +
+    'roster has real work, it just cannot do physical work.</p>' + dl([
+      ["Nothing heals in the field",
+       "A wound&rsquo;s clock is <b>paused</b> while a hero is deployed, and fatigue " +
+       "never falls out there. Recovery happens at the Keep and nowhere else."],
+      ["Fatigue", "Rises with every job and drags on the odds. It comes back at <b>" +
+       CONFIG.FATIGUE_REST_PER_HOUR + " an hour</b> resting, faster with an Infirmary."],
+      ["Sending someone out hurt", "<b>" + pct(CONFIG.INJURY_WORSEN_CHANCE) +
+       "</b> that the wound worsens instead of healing."],
+      ["Marks", "A Grievous wound carries a <b>" + pct(CONFIG.MARK_CHANCE_ON_GRIEVOUS) +
+       "</b> chance of a permanent Mark — a scar with real numbers on it, some good, " +
+       "most a trade. Marks never go away."]
+    ]) +
+    '<p><b>Benching is often the correct play,</b> and that is measured rather than ' +
+    'advice: a Keep that rests its wounded earns more standing from half as many jobs ' +
+    'as one that sends everyone every time.</p>');
+
+  add("What you collect", dl([
+      [icon("sym-gold", 13, "var(--gold)") + " Gold",
+       "From every job that pays. Delves and Warfronts are the gold engines; Court " +
+       "pays almost none. Spent on the Keep."],
+      ["Materials",
+       "One per region — " + CONFIG.ZONES.map(z => icon(CONFIG.MATERIALS[z.material].sym, 12,
+         CONFIG.MATERIALS[z.material].color) + " <b>" + CONFIG.MATERIALS[z.material].name +
+         "</b> in " + z.name).join(", ") + ". <b>Nothing drops below " +
+       tierName(CONFIG.MATERIAL_DROP_MIN_TIER) + "</b>, so a region you have not " +
+       "established yields no materials at all."],
+      [icon("sym-charter", 13, "var(--ink)") + " Charters",
+       "Only from a Warfront. Spend <b>" + CONFIG.CONSOLIDATE_CHARTER_COST +
+       "</b> to <b>Consolidate</b> a region: it gains a permanent floor at the bottom " +
+       "of its current tier that decay and failure can never take it below. This is " +
+       "how the treadmill becomes a ratchet."]
+    ]));
+
+  add("The Keep", '<p>Four buildings, ' + CONFIG.BUILDINGS.greatHall.max +
+    ' levels each. Every upgrade costs gold plus materials from at least <b>' +
+    CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE + ' different regions</b> — which is why ' +
+    'going wide is a prerequisite and not a preference.</p>' +
+    dl(Object.keys(CONFIG.BUILDINGS).map(id =>
+      ["<b>" + CONFIG.BUILDINGS[id].name + "</b>", CONFIG.BUILDINGS[id].blurb])) +
+    '<p>New heroes come from the map, not from coin: a named recruit offers ' +
+    'themselves once their home region reaches <b>' + tierName(CONFIG.RECRUIT_MIN_TIER) +
+    '</b>, and the Great Hall decides whether there is a bed for them.</p>');
+
+  add("Winning", '<p>Hold <b>' + spell(CONFIG.WIN_ZONE_COUNT) + ' regions at ' +
+    tierName(CONFIG.WIN_MIN_TIER) + '</b> at the same time. Not one after another — ' +
+    'at once, with decay pulling at all ' + spell(CONFIG.WIN_ZONE_COUNT) +
+    ' of them. It is not reachable with a starting roster, and it is not meant to be.</p>' +
+    '<p>Reaching it does not end the game. The Keep goes on.</p>');
+
+  add("Your first week", '<ol class="hol">' +
+    '<li><b>' + CONFIG.ZONES[0].name + ' is the gentle one.</b> ' +
+      CONFIG.ZONES[CONFIG.ZONES.length - 1].name + ' will maim a level-1 party. Going ' +
+      'wide too early is the classic way to lose this game.</li>' +
+    '<li><b>Match the hero to the test.</b> Your Mage and Priest look useless on a ' +
+      'Clear because they are — they are for Investigate and Court, which pay the best ' +
+      'standing in the game.</li>' +
+    '<li><b>Bench anyone hurt.</b> They do not heal out there, and a wound that ' +
+      'worsens costs far more than the job was worth.</li>' +
+    '<li><b>Get three regions to ' + tierName(CONFIG.MATERIAL_DROP_MIN_TIER) +
+      '</b> before you plan any building. Below that they produce no materials, and ' +
+      'no building can be paid for out of one region anyway.</li>' +
+    '<li><b>Post a Patrol before you close the tab.</b> Halved decay across an ' +
+      'absence is worth more than almost anything else you could have sent them to do.</li>' +
+    '</ol>');
+  return S;
+}
+
+let helpOpen = false;
+function showHelp(){
+  // Symmetric with showReport(): one modal at a time, in both directions. The
+  // report's scrim covers the ? and its focus trap holds the keyboard, so this
+  // arm is not reachable today -- but the invariant is what the assertion
+  // checks, and half an invariant is the thing that rots.
+  if (helpOpen || reportOpen) return;
+  helpOpen = true;
+  const scrim = el("div", "scrim");
+  scrim.setAttribute("role", "dialog");
+  scrim.setAttribute("aria-modal", "true");
+  scrim.setAttribute("aria-label", "How to play");
+  scrim.innerHTML = '<div class="modal"><header><h2>How to play</h2>' +
+    '<div class="tiny dim">Everything a new lord needs, and nothing you have to ' +
+    'memorise — the numbers below are read live out of the running game.</div>' +
+    '</header><div class="mbody help">' +
+    helpSections().map(s => '<section><h3>' + s.title + '</h3>' + s.html + '</section>').join("") +
+    '</div><div class="mfoot"><button class="btn pri" id="hclose">Understood</button></div></div>';
+  document.body.appendChild(scrim);
+
+  // On the auto-open at boot nothing is focused yet, and handing focus back to
+  // <body> drops a keyboard player at the top of the document with no cue. Fall
+  // back to the ? itself, which is both where the dialog came from and how to
+  // get it back.
+  const from = document.activeElement;
+  const returnFocus = (from && from !== document.body) ? from : $("#help");
+  const close = () => {
+    helpOpen = false;
+    scrim.remove();
+    // Seen once, never forced again -- but the ? in the header is always there.
+    if (state && !state.seenHelp){ state.seenHelp = true; saveNow(); }
+    if (returnFocus && returnFocus.focus) { try { returnFocus.focus(); } catch (e) {} }
+    // Anything the tick queued while this was up was deliberately held back
+    // rather than stacked on top. Show it now, the same way the report chains
+    // into a second report.
+    showReport();
+  };
+  scrim.querySelector("#hclose").onclick = close;
+  scrim.querySelector("#hclose").focus();
+  trapFocus(scrim, close);
+}
+
 /* ------------------------------------------------------- report modal ---- */
 let reportOpen = false;
 function showReport(){
-  if (reportOpen) return;
+  // One modal at a time. The tick keeps running behind an open dialog by
+  // design, so a quest finishing (or a raid lapsing) while the player is
+  // reading the tutorial used to append a SECOND aria-modal scrim on top of the
+  // first, leaving the help dialog live underneath with its own key handler.
+  // Deferring is safe precisely because of the Phase 6 fix: the queue is
+  // consumed on OPEN, never cleared on close, so anything that arrives while
+  // this is postponed simply accumulates. showHelp()'s close chains back here.
+  if (reportOpen || helpOpen) return;
   const abs = state.pendingAbsence;
   if (!state.pendingReports.length && !abs && !(state.pendingIgnored || []).length) return;
   reportOpen = true;
@@ -3850,24 +4532,7 @@ function showReport(){
   };
   scrim.querySelector("#rclose").onclick = close;
   scrim.querySelector("#rclose").focus();
-  scrim.onkeydown = e => {
-    if (e.key === "Escape"){ close(); return; }
-    // Trap Tab inside the dialog. The scrim covers the page but the controls
-    // behind it stay keyboard-reachable otherwise, so a Tab-happy player could
-    // deploy a quest through a modal that is nominally the only thing on screen.
-    if (e.key !== "Tab") return;
-    // `[href]` also matches every SVG <use> icon in the report body, and a bare
-    // <use> is never a Tab stop -- so `first` was an element focus() silently
-    // ignores, the backward wrap never fired, and Shift+Tab walked straight out
-    // of the dialog onto the live page behind it. Match anchors specifically and
-    // drop anything not actually rendered.
-    const focusable = [...scrim.querySelectorAll(CONFIG.MODAL_FOCUS_SELECTOR)]
-      .filter(n => n.getClientRects().length > 0 && !n.disabled);
-    if (!focusable.length) return;
-    const first = focusable[0], last = focusable[focusable.length - 1];
-    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
-  };
+  trapFocus(scrim, close);
 }
 
 /* ====================================================== THE RETURN REPORT ==
@@ -3946,7 +4611,7 @@ function render(){
   else renderKeep();
 }
 
-/* Timers update in place so the deploy drawer never loses its checkboxes. */
+/* Timers update in place so an open deploy drawer never loses its selection. */
 function updateTimers(){
   const t = nowMs();
   document.querySelectorAll("[data-until]").forEach(n => {
@@ -3954,7 +4619,12 @@ function updateTimers(){
   });
   document.querySelectorAll("[data-prog]").forEach(n => {
     const [a, b] = n.dataset.prog.split(",").map(Number);
-    n.style.width = clamp(0, 100, ((t - a) / (b - a)) * 100) + "%";
+    // Same Math.max(1) the initial render uses. A zero-length span makes this
+    // NaN, and clamp() passes NaN through (neither comparison is true), so the
+    // bar would be set to the invalid width "NaN%" -- which the browser ignores
+    // silently, freezing the bar rather than throwing. No current CONFIG can
+    // produce a zero-length quest; CONFIG on this project is retuned constantly.
+    n.style.width = clamp(0, 100, ((t - a) / Math.max(1, b - a)) * 100) + "%";
   });
 }
 
@@ -3992,12 +4662,17 @@ function boot(){
   $("#nav-map").onclick    = () => setView("map");
   $("#nav-roster").onclick = () => setView("roster");
   $("#nav-keep").onclick   = () => setView("keep");
+  $("#help").onclick       = showHelp;
 
   addEventListener("pagehide", saveNow);
   addEventListener("visibilitychange", () => { if (document.hidden) saveNow(); });
 
   render();
   showReport();
+  // The tutorial yields to the report: a returning player wants to know what
+  // happened, and two stacked dialogs is how you teach someone to dismiss both
+  // without reading either.
+  if (!state.seenHelp && !reportOpen) showHelp();
   setInterval(tick, CONFIG.TICK_MS);
   if (!storageOK) toast("Saving to memory only — storage unavailable.");
 
@@ -4216,6 +4891,137 @@ function assertAll(){
       ? true : "the measured Clear baseline moved to " + round1(questDifficulty("clear", 2, 1));
   });
 
+  // --- the tutorial ------------------------------------------------------
+  // A tutorial is the one screen that can be WRONG rather than broken, and
+  // nothing about it throws. Both checks below drive the real builder.
+  chk("the tutorial names every system", () => {
+    const secs = helpSections();
+    if (secs.length < 10) return "only " + secs.length + " sections";
+    const titles = secs.map(s => s.title);
+    if (new Set(titles).size !== titles.length) return "two sections share a title";
+    const empty = secs.filter(s => !s.html || s.html.length < 80).map(s => s.title);
+    if (empty.length) return "thin section: " + empty[0];
+    const txt = secs.map(s => s.title + " " + s.html).join(" ");
+    const want = []
+      .concat(CONFIG.TIERS.map(t => ["tier", t.name]))
+      .concat(Object.keys(CONFIG.QUEST_TYPES).map(k => ["quest type", CONFIG.QUEST_TYPES[k].name]))
+      .concat(Object.keys(CONFIG.MATERIALS).map(k => ["material", CONFIG.MATERIALS[k].name]))
+      .concat(CONFIG.ZONES.map(z => ["zone", z.name]))
+      .concat(Object.keys(CONFIG.BUILDINGS).map(k => ["building", CONFIG.BUILDINGS[k].name]))
+      .concat(Object.keys(CONFIG.ZONE_EVENTS).map(k => ["event", CONFIG.ZONE_EVENTS[k].name]))
+      .concat(CONFIG.INJURY_SEVERITIES.map(s => ["wound", s.name]))
+      .concat(Object.keys(DERIVED).map(k => ["stat", DERIVED[k].name]))
+      .concat([["attribute", "Might"], ["attribute", "Agility"], ["attribute", "Wits"],
+               ["attribute", "Spirit"], ["attribute", "Presence"],
+               ["currency", "Charter"], ["currency", "Gold"],
+               ["mechanic", "Mark"], ["mechanic", "Consolidate"], ["mechanic", "fatigue"]]);
+    const missing = want.filter(([, name]) => txt.indexOf(name) < 0);
+    return missing.length === 0 ? true
+      : "never mentioned: " + missing.slice(0, 3).map(m => m[0] + " " + m[1]).join(", ");
+  });
+
+  chk("the tutorial states the design's own numbers", () => {
+    // Every figure in the tutorial is interpolated from CONFIG, which is what
+    // stops it rotting -- but that only helps if it is really interpolated.
+    // These are DESIGN.md's own literals, deliberately not read back out of
+    // CONFIG: write CONFIG.X on both sides and the check moves with the bug.
+    //
+    // Each literal is ANCHORED to its own sentence and must appear EXACTLY
+    // once. A bare "48 hours" looked fine and then quietly stopped testing
+    // anything the day the events table gained "runs 24-48 hours" -- the probe
+    // that moves the cap went from caught to missed without a word, because the
+    // check was matching a completely unrelated line. A loose substring is not
+    // an assertion, and a second occurrence is now a failure rather than a
+    // silent upgrade to always-true.
+    const txt = helpSections().map(s => s.html).join(" ");
+    const need = [
+      ["the 48-hour offline cap", "first <b>48 hours</b>"],
+      ["the win condition's four zones", "four regions at Honored"],
+      ["materials gated on Noticed", "below Noticed"],
+      ["the Warfront tier gate", "Needs Honored standing"],
+      ["the Delve tier gate", "Needs Noticed standing"],
+      ["the rival lock threshold", "Rival 80+"],
+      ["the incursion threshold", "Rival 60+"],
+      ["worsening a wound on redeploy", "<b>30%</b> that the wound worsens"],
+      ["the Mark chance", "<b>25%</b> chance of a permanent Mark"],
+      ["resting recovery", "<b>8 an hour</b> resting"],
+      ["three materials per upgrade", "<b>3 different regions</b>"],
+      ["the branch level", "At level <b>10</b>"]
+    ];
+    const count = (hay, needle) => hay.split(needle).length - 1;
+    const missing = [], duplicated = [];
+    need.forEach(([label, lit]) => {
+      const n = count(txt, lit);
+      if (n === 0) missing.push(label);
+      else if (n > 1) duplicated.push(label + " (x" + n + ")");
+    });
+    if (missing.length) return "no longer states " + missing.join("; ");
+    return duplicated.length === 0 ? true
+      : "matched in more than one place, so it no longer pins anything: " +
+        duplicated.join("; ");
+  });
+
+  chk("only one dialog is ever on screen", () => {
+    // Nothing in the suite opened the tutorial at all, which is exactly why the
+    // stacking bug survived: the tick keeps running behind an open dialog, so a
+    // quest finishing while the player reads the tutorial appended a SECOND
+    // aria-modal scrim over the first. A check that never opens a surface
+    // cannot defend it.
+    //
+    // This drives real modals, so per the rule learned the hard way it must own
+    // the surface it drives: detach whatever is live first, disarm persistence
+    // (close() calls saveNow()), and put everything back afterwards.
+    const real = state, wasDisarmed = savesDisarmed;
+    const wasReport = reportOpen, wasHelp = helpOpen;
+    const live = [...document.querySelectorAll(".scrim")];
+    const parents = live.map(n => n.parentNode);
+    try {
+      savesDisarmed = true;
+      live.forEach(n => n.remove());
+      reportOpen = false; helpOpen = false;
+      state = JSON.parse(JSON.stringify(real));
+
+      showHelp();
+      if (!helpOpen) return "the tutorial refused to open";
+      if (document.querySelectorAll(".scrim").length !== 1)
+        return "opening the tutorial produced " +
+               document.querySelectorAll(".scrim").length + " dialogs";
+      const helpScrim = document.querySelector(".scrim");
+
+      // A report arriving underneath must WAIT, not stack.
+      state.pendingReports = [{ at: nowMs(), zoneId: state.zones[0].id, name:"Probe",
+                                typeName:"Clear", type:"clear", success:true,
+                                heroNames:["Probe"], injuries:[], influence:1,
+                                gold:0, material:0, marks:[] }];
+      showReport();
+      if (document.querySelectorAll(".scrim").length !== 1)
+        return "a report stacked on top of the open tutorial";
+      if (reportOpen) return "the report opened behind the tutorial";
+      if (state.pendingReports.length !== 1)
+        return "the deferred report consumed its queue anyway";
+
+      // Closing the tutorial must hand over to the waiting report.
+      helpScrim.querySelector("#hclose").click();
+      if (helpOpen) return "the tutorial did not close";
+      if (!reportOpen) return "closing the tutorial did not release the waiting report";
+      if (document.querySelectorAll(".scrim").length !== 1)
+        return "closing the tutorial left " +
+               document.querySelectorAll(".scrim").length + " dialogs on screen";
+      if (state.pendingReports.length !== 0)
+        return "the report opened without consuming its queue";
+
+      // And the reverse arm: the tutorial must not open over a live report.
+      showHelp();
+      if (helpOpen) return "the tutorial opened on top of a live report";
+      return true;
+    } finally {
+      document.querySelectorAll(".scrim").forEach(n => n.remove());
+      live.forEach((n, i) => { if (parents[i]) parents[i].appendChild(n); });
+      reportOpen = wasReport; helpOpen = wasHelp;
+      savesDisarmed = wasDisarmed; state = real;
+    }
+  });
+
   chk("every clickable thing is reachable from the keyboard", () => {
     // The class check for input: several cards shipped as bare div.onclick and
     // were simply unusable without a mouse. Render every view and every panel,
@@ -4265,7 +5071,7 @@ function assertAll(){
     // first "focusable" was unreachable, the backward wrap never fired, and
     // Shift+Tab walked out of the dialog onto the live page behind it.
     const real = state;
-    const wasOpen = reportOpen;
+    const wasOpen = reportOpen, wasHelp = helpOpen;
     const liveScrim = document.querySelector(".scrim");
     if (liveScrim) liveScrim.remove();
     const wasDisarmed = savesDisarmed;
@@ -4273,6 +5079,11 @@ function assertAll(){
     try {
       state = JSON.parse(JSON.stringify(real));
       reportOpen = false;
+      // helpOpen too: showReport() now refuses to open while the tutorial is up
+      // (one dialog at a time), and on a brand new save the tutorial IS up when
+      // the boot suite runs -- so this check silently stopped being able to open
+      // the surface it drives. Own every flag that gates the thing you drive.
+      helpOpen = false;
       // A report carrying reward icons, which is what introduced the <use> tags.
       state.pendingReports = [{ at: nowMs(), zoneId: CONFIG.ZONES[0].id,
         zoneName: CONFIG.ZONES[0].name, questName:"Probe", typeName:"Clear", type:"clear",
@@ -4304,7 +5115,7 @@ function assertAll(){
     } finally {
       document.querySelectorAll(".scrim").forEach(s => s.remove());
       if (liveScrim) document.body.appendChild(liveScrim);
-      reportOpen = wasOpen;
+      reportOpen = wasOpen; helpOpen = wasHelp;
       state = real;
       savesDisarmed = wasDisarmed;
     }
@@ -4334,6 +5145,15 @@ function assertAll(){
     try {
       state = JSON.parse(JSON.stringify(real));
       state.won = false; state.pendingReports = [];
+      // The last leg of this check advances three hours and asserts that decay
+      // still bites after the win. A quest resolving inside that window ADDS
+      // influence first (§12 applies gains before decay), so a party in the
+      // field made the zone finish higher than it started and the check read it
+      // as "decay stopped after the win" -- a false alarm the moment the suite
+      // ran during real play. Nothing here is about resolution, so the field is
+      // cleared deliberately and the premise is now stated rather than assumed.
+      state.activeQuests = [];
+      state.heroes.forEach(h => { if (h.status === "deployed") h.status = "idle"; });
       // §10: four zones at Honored or above AT THE SAME TIME.
       if (CONFIG.WIN_ZONE_COUNT !== 4)
         return "§10 requires four zones; CONFIG says " + CONFIG.WIN_ZONE_COUNT;
@@ -4433,6 +5253,13 @@ function assertAll(){
 
       const h = state.heroes.filter(x => x.cls === "Warrior")[0];
       h.subclass = null;
+      // Branching is refused while a hero is deployed, so this check must OWN
+      // that hero's status rather than inherit whatever the player is doing.
+      // Left to the live save it reported "a valid branch was refused" the first
+      // time the suite ran with a Warrior in the field: a false alarm about the
+      // game, caused by a premise the check relied on and never stated. The
+      // guard itself has its own check -- this one is about levels.
+      h.status = "idle";
       h.level = CONFIG.SUBCLASS_LEVEL - 1;
       if (awaitingSubclass(h)) return "a branch was offered below the level";
       if (chooseSubclass(h, "knight")) return "a branch was taken below the level";
@@ -4998,7 +5825,7 @@ function assertAll(){
     // unseen; the queue is consumed on OPEN instead, so late arrivals survive
     // and get their own report.
     const real = state;
-    const wasOpen = reportOpen;
+    const wasOpen = reportOpen, wasHelp = helpOpen;
     // The boot suite runs AFTER boot()'s own showReport(), so on any real load
     // with pending reports there is already a modal on screen. Left alone, this
     // check would early-return, then click the PLAYER'S close button and read
@@ -5013,6 +5840,11 @@ function assertAll(){
     try {
       state = JSON.parse(JSON.stringify(real));
       reportOpen = false;
+      // helpOpen too: showReport() now refuses to open while the tutorial is up
+      // (one dialog at a time), and on a brand new save the tutorial IS up when
+      // the boot suite runs -- so this check silently stopped being able to open
+      // the surface it drives. Own every flag that gates the thing you drive.
+      helpOpen = false;
       state.pendingReports = [{ at: nowMs(), zoneId: CONFIG.ZONES[0].id,
         zoneName: CONFIG.ZONES[0].name, questName:"First", typeName:"Clear", type:"clear",
         success:true, partial:false, heroNames:["A"], influence:1, gold:1, material:0,
@@ -5050,7 +5882,7 @@ function assertAll(){
     } finally {
       document.querySelectorAll(".scrim").forEach(s => s.remove());
       if (liveScrim) document.body.appendChild(liveScrim);   // give the player theirs back
-      reportOpen = wasOpen;
+      reportOpen = wasOpen; helpOpen = wasHelp;
       state = real;
       savesDisarmed = wasDisarmed;
     }
@@ -5720,36 +6552,76 @@ function assertAll(){
     // compare the observed injury rate against the number previewQuest puts in
     // front of the player. This is the check that was missing when the drawer
     // was quietly showing best-case risk and ignoring Delve stage exposure.
-    const real = state;
+    //
+    // It runs over three STARTING WOUNDS, not one. Left at "whatever the save
+    // happens to hold" it only ever previewed healthy heroes, so it never
+    // touched previewQuest's already-wounded branch at all -- the branch where
+    // resolution ignores the danger-derived chance entirely and takes a flat
+    // worsen roll, and where a hero at the worst severity can take no harm at
+    // all. That was the half of the readout that was actually wrong.
+    // Sample counts are sized per case rather than uniform, because falsify()
+    // runs this whole suite a few hundred times and the tool running it dies if
+    // one call gets long enough. The unhurt case is the delicate one (stage
+    // exposure compounding across a Delve) and keeps its 1,500. The wounded
+    // cases predict a FLAT constant, which needs far less to pin down, and the
+    // Grievous case predicts exactly zero -- where a few hundred runs producing
+    // one single worsening is already a failure.
+    const cases = [[null, 1500], ["light", 600], ["grievous", 300]];
+    for (const [startWound, n] of cases){
+      const r = reconcileHurtRisk(startWound, n);
+      if (r !== true) return (startWound || "unhurt") + ": " + r;
+    }
+    return true;
+  });
+
+  function reconcileHurtRisk(startWound, N){
+    const real = state, wasDisarmed = savesDisarmed;
     try {
+      savesDisarmed = true;                 // deploy() saves; this must not
       state = JSON.parse(JSON.stringify(real));
       const zd = zoneDef(CONFIG.ZONES[0].id);
       const party = state.heroes.slice(0, 3);
+      party.forEach(h => {
+        h.fatigue = 0;
+        h.injury = startWound
+          ? { severity: startWound, healsAt: nowMs() + 100 * 3600000 }
+          : { severity: null, healsAt: 0 };
+      });
       const q = { id:"probe", zoneId: zd.id, type:"delve", typeName:"Delve", stat:"power",
         name:"Probe", flavor:"p", length:"long", durationMs: CONFIG.DURATION_MS.long,
         required:3, stages: CONFIG.QUEST_TYPES.delve.stages,
         difficulty: questDifficulty("delve", 3, zd.danger),
         gold:90, material:3, expiresAt: nowMs() + 1e6 };
+      // The party state the PREVIEW measured. Restoring to pristine heroes each
+      // iteration instead was the bug that made this check valid only on a
+      // fresh save: with a wounded roster the drawer was quoted for hurt heroes
+      // and the resolver ran healthy ones, and the two disagreed by 27 points.
+      const partySnap = JSON.stringify(party);
       const pv = previewQuest(q, party);
       const target = party[0];
       const predicted = pv.injuries.filter(i => i.hero.id === target.id)[0].expected;
 
-      const N = 1500;
+      // Build the in-flight record with deploy(), NOT by hand. Hand-rolling it
+      // meant this check compared the drawer against a record the game would
+      // never have produced -- it had already silently dropped the event
+      // multiplier once, and hardcoding `locked:false` made it disagree by 18
+      // points the moment a zone went Contested. One source for the frozen
+      // fields is the only version of this check that stays true.
+      state.zones[0].slate.push(q);
+      deploy(q, party);
+      const record = JSON.stringify(state.activeQuests.pop());
+
       let hurt = 0;
       return withSeed(0x5EED1, () => {
       for (let i = 0; i < N; i++){
-        party.forEach(h => { h.fatigue = 0; h.injury = { severity:null, healsAt:0 }; });
+        const restore = JSON.parse(partySnap);
+        party.forEach((h, n) => { Object.keys(h).forEach(k => delete h[k]);
+                                  Object.assign(h, restore[n]); });
         state.pendingReports = [];
         state.zones[0].influence = 50;
-        resolveQuest({ questId:"probe", zoneId: zd.id, type:"delve", typeName:"Delve",
-          stat:"power", stages: pv.stages, name:"Probe", length:"long",
-          heroIds: party.map(h => h.id), ratio: pv.ratio, chance: pv.chance,
-          startedAt:0, completesAt:0, gold:90, material:3, influence: pv.influence,
-          locked:false, staffCount:3, required:3,
-          // Exactly what deploy() freezes. Omitting it made resolution ignore the
-          // live event that previewQuest had just included.
-          eventInjuryMult: eventEffect(zoneOf(zd.id), "injuryMult", 1) }, nowMs());
-        if (target.injury.severity) hurt++;
+        resolveQuest(JSON.parse(record), nowMs());
+        if (target.injury.severity && target.injury.severity !== restore[0].injury.severity)
+          hurt++;
       }
       const observed = hurt / N;
       // ~1500 samples: 4 points of slack is comfortably outside sampling noise
@@ -5758,8 +6630,8 @@ function assertAll(){
         ? true : "the drawer promises " + pct(predicted) +
                  " but resolution produced " + pct(observed) + " over " + N + " runs";
       });
-    } finally { state = real; }
-  });
+    } finally { savesDisarmed = wasDisarmed; state = real; }
+  }
 
   chk("the Hunt counter helps, never blocks, and stays on Hunts", () => {
     const q = { counterRole:"Front", type:"hunt" };
@@ -6344,6 +7216,64 @@ function falsify(){
               CONFIG.MODAL_FOCUS_SELECTOR =
                 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'; },
       () => { CONFIG.MODAL_FOCUS_SELECTOR = keep.mfs; }],
+    // The tutorial. These probes are the point of the whole exercise: they move
+    // a CONFIG number and prove the PROSE moved with it, which is the only way
+    // to know the figures on that screen are read live rather than typed in.
+    ["an offline cap the tutorial still calls 48h",
+      "the tutorial states the design's own numbers",
+      () => { keep.hc = CONFIG.OFFLINE_DECAY_CAP_H; CONFIG.OFFLINE_DECAY_CAP_H = 12; },
+      () => { CONFIG.OFFLINE_DECAY_CAP_H = keep.hc; }],
+    ["a win condition the tutorial still calls four zones",
+      "the tutorial states the design's own numbers",
+      () => { keep.hw = CONFIG.WIN_ZONE_COUNT; CONFIG.WIN_ZONE_COUNT = 3; },
+      () => { CONFIG.WIN_ZONE_COUNT = keep.hw; }],
+    ["a worsen chance the tutorial still calls 30%",
+      "the tutorial states the design's own numbers",
+      () => { keep.hi = CONFIG.INJURY_WORSEN_CHANCE; CONFIG.INJURY_WORSEN_CHANCE = 0.55; },
+      () => { CONFIG.INJURY_WORSEN_CHANCE = keep.hi; }],
+    // One probe per literal, not one per check. falsify() tracks coverage by
+    // CHECK NAME, so three probes made a twelve-claim check read as "probed"
+    // while nine of its claims had never been shown capable of failing -- the
+    // uncovered list cannot see inside a check.
+    ["a material gate the tutorial still calls Noticed",
+      "the tutorial states the design's own numbers",
+      () => { keep.hm = CONFIG.MATERIAL_DROP_MIN_TIER; CONFIG.MATERIAL_DROP_MIN_TIER = 3; },
+      () => { CONFIG.MATERIAL_DROP_MIN_TIER = keep.hm; }],
+    ["a Warfront gate the tutorial still calls Honored",
+      "the tutorial states the design's own numbers",
+      () => { keep.hwf = CONFIG.QUEST_TYPES.warfront.minTier;
+              CONFIG.QUEST_TYPES.warfront.minTier = 2; },
+      () => { CONFIG.QUEST_TYPES.warfront.minTier = keep.hwf; }],
+    ["a Delve gate the tutorial still calls Noticed",
+      "the tutorial states the design's own numbers",
+      () => { keep.hdv = CONFIG.QUEST_TYPES.delve.minTier;
+              CONFIG.QUEST_TYPES.delve.minTier = 2; },
+      () => { CONFIG.QUEST_TYPES.delve.minTier = keep.hdv; }],
+    ["a lock threshold the tutorial still calls 80",
+      "the tutorial states the design's own numbers",
+      () => { keep.hl = CONFIG.RIVAL_LOCK_AT; CONFIG.RIVAL_LOCK_AT = 90; },
+      () => { CONFIG.RIVAL_LOCK_AT = keep.hl; }],
+    ["a raid threshold the tutorial still calls 60",
+      "the tutorial states the design's own numbers",
+      () => { keep.hin = CONFIG.INCURSION_RIVAL_MIN; CONFIG.INCURSION_RIVAL_MIN = 70; },
+      () => { CONFIG.INCURSION_RIVAL_MIN = keep.hin; }],
+    ["a Mark chance the tutorial still calls 25%",
+      "the tutorial states the design's own numbers",
+      () => { keep.hmk = CONFIG.MARK_CHANCE_ON_GRIEVOUS; CONFIG.MARK_CHANCE_ON_GRIEVOUS = 0.4; },
+      () => { CONFIG.MARK_CHANCE_ON_GRIEVOUS = keep.hmk; }],
+    ["a rest rate the tutorial still calls 8 an hour",
+      "the tutorial states the design's own numbers",
+      () => { keep.hr = CONFIG.FATIGUE_REST_PER_HOUR; CONFIG.FATIGUE_REST_PER_HOUR = 5; },
+      () => { CONFIG.FATIGUE_REST_PER_HOUR = keep.hr; }],
+    ["a material minimum the tutorial still calls three regions",
+      "the tutorial states the design's own numbers",
+      () => { keep.hkm = CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE;
+              CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE = 2; },
+      () => { CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE = keep.hkm; }],
+    ["a branch level the tutorial still calls 10",
+      "the tutorial states the design's own numbers",
+      () => { keep.hsl = CONFIG.SUBCLASS_LEVEL; CONFIG.SUBCLASS_LEVEL = 12; },
+      () => { CONFIG.SUBCLASS_LEVEL = keep.hsl; }],
     ["a clickable nothing can Tab to", "every clickable thing is reachable from the keyboard",
       () => { const d = document.createElement("div");
               d.id = "probe-unfocusable"; d.onclick = () => {};
@@ -6721,6 +7651,19 @@ function falsify(){
   // would be worse than saying so. Both are listed with the reason, and both
   // still count as gaps -- just declared ones.
   const UNPROBEABLE = {
+    "only one dialog is ever on screen":
+      "guards WHICH FLAGS showReport() and showHelp() consult before opening, and that " +
+      "closing the tutorial chains into a deferred report. No constant adds or removes " +
+      "a condition from an if, and every lever that could be perturbed either stops a " +
+      "dialog opening at all (so nothing can stack, and the bug cannot manifest) or " +
+      "leaves both guards untouched -- the probe-that-prevents-the-bug trap",
+    "the tutorial names every system":
+      "the tutorial is GENERATED from the same tables this check reads, so every runtime " +
+      "lever moves both sides together and any probe against it is a tautology. Renaming " +
+      "a quest type renames it in the table too. What it actually guards is a section " +
+      "being deleted or gutted by a source edit, which has no runtime lever at all -- " +
+      "the probeable half of the tutorial is 'states the design's own numbers', whose " +
+      "expectations are DESIGN.md literals that CONFIG cannot move",
     "injury is rolled before this quest's own fatigue is added":
       "reads statement order in the source; nothing at runtime can reorder it",
     "running the suite leaves the game untouched":
@@ -6918,9 +7861,106 @@ function sweepKeep(){
   return { combos, failures, ok: failures.length === 0 };
 }
 
+/* ------------------------------------------------------- sweepPlay ------
+   sweepKeep() sweeps the BUILDING space. This sweeps the PLAY space, and it
+   exists because two assertions were caught assuming a premise they never
+   stated: both cloned the live save, and both broke the first time the suite
+   ran while a hero was actually in the field. One reported "a valid branch was
+   refused" (branching is refused mid-quest, correctly) and the other "decay
+   stopped after the win" (a quest resolving in the window added influence
+   before decay took any). Neither was a bug in the game. Both were checks that
+   only ever ran against a Keep where nothing was happening.
+
+   The suite runs on every boot against whatever the player's save looks like,
+   so every shape below is a shape it will really meet. Run this after touching
+   any assertion that clones live state.
+   ------------------------------------------------------------------------ */
+function sweepPlay(){
+  const real = state, wasDisarmed = savesDisarmed;
+  const wasHelp = helpOpen, wasReport = reportOpen;
+  const liveScrims = [...document.querySelectorAll(".scrim")];
+  liveScrims.forEach(n => n.remove());
+  savesDisarmed = true;            // some shapes call deploy(), which saves
+  const failures = [];
+  const run = (name, mutate) => {
+    state = JSON.parse(JSON.stringify(real));
+    try { mutate(state); } catch (e){ failures.push(name + ": setup threw " + e.message); return; }
+    const r = assertAll();
+    if (!r.pass) failures.push(name + ": " + r.fails.join(" | "));
+  };
+  const sev = CONFIG.INJURY_SEVERITIES;
+
+  try {
+    run("fresh", () => {});
+    run("a party in the field", s => {
+      const q = s.zones[0].slate[0];
+      if (!q) return;
+      state = s;                                    // deploy() reads the global
+      deploy(q, s.heroes.filter(h => h.status === "idle").slice(0, q.required));
+    });
+    run("several parties out at once", s => {
+      // Through deploy(), not by setting status by hand: a hero flagged
+      // "deployed" with no quest behind them is not a state the game can reach,
+      // and generating one only trips the assertion that exists to catch it.
+      state = s;
+      s.zones.forEach(z => {
+        const q = z.slate[0];
+        const idle = s.heroes.filter(h => h.status === "idle");
+        if (q && idle.length >= q.required) deploy(q, idle.slice(0, q.required));
+      });
+    });
+    run("the whole roster hurt", s => {
+      s.heroes.forEach((h, i) => {
+        h.injury = { severity: sev[i % sev.length].id, healsAt: nowMs() + 3600000 };
+        h.fatigue = 60;
+      });
+    });
+    run("marked and levelled", s => {
+      const ids = Object.keys(MARKS);
+      s.heroes.forEach((h, i) => {
+        h.level = CONFIG.SUBCLASS_LEVEL;
+        h.marks = [{ id: ids[i % ids.length], zoneId: s.zones[0].id, atMs: 0 }];
+      });
+    });
+    run("already won", s => {
+      s.zones.forEach(z => { z.influence = CONFIG.TIERS[CONFIG.WIN_MIN_TIER].min + 10; });
+      s.won = true; s.wonAt = nowMs();
+    });
+    run("contested everywhere", s => {
+      s.zones.forEach(z => { z.rival = CONFIG.RIVAL_LOCK_AT + 5; z.influence = 25; });
+    });
+    run("consolidated everywhere", s => {
+      s.zones.forEach(z => { z.influence = 70; z.influenceFloor = 60; });
+      s.charters = 3;
+    });
+    run("empty slates", s => { s.zones.forEach(z => { z.slate = []; }); });
+    run("a report waiting", s => {
+      s.pendingAbsence = { elapsedMs: 48 * 3600000, zones: {}, healed: [] };
+    });
+    // The state a brand new player is in for their whole first minute: the
+    // tutorial is on screen. Two report-driving checks broke here the moment
+    // showReport() learned to defer to it -- they owned `reportOpen` but not
+    // `helpOpen`, so they could no longer open the surface they drive, and said
+    // "the report did not open" as if the game were broken.
+    run("with the tutorial on screen", s => {
+      state = s;
+      helpOpen = false; reportOpen = false;
+      document.querySelectorAll(".scrim").forEach(n => n.remove());
+      showHelp();
+    });
+  } finally {
+    document.querySelectorAll(".scrim").forEach(n => n.remove());
+    liveScrims.forEach(n => document.body.appendChild(n));
+    helpOpen = wasHelp; reportOpen = wasReport;
+    savesDisarmed = wasDisarmed; state = real;
+  }
+  return { shapes: 11, failures, ok: failures.length === 0 };
+}
+
 const BK = {
   get state(){ return state; },
   sweepKeep,
+  sweepPlay,
   // Registries are exported and mutable on purpose: falsifying an assertion
   // means breaking the thing it names from the console in one call.
   CONFIG, CLEAR_QUESTS, TRAITS, MARKS, STARTING_HEROES, QUEST_POOLS, DERIVED,
