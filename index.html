@@ -196,6 +196,12 @@ button{font-family:var(--sans)}
 .hpick .nm b{display:block;font-weight:600;font-size:13.5px}
 .hpick.sel .nm b{color:var(--t4)}
 .hpick .nm span{font-family:var(--sans);font-size:11px;color:var(--muted)}
+/* Wounded heroes read by severity, not one flat red. The warning glyph carries
+   the same information without relying on colour alone. */
+.hpick .nm span.note{display:inline-flex;align-items:center;gap:3px}
+.hpick .nm span.hurt-light{color:var(--t3)}
+.hpick .nm span.hurt-serious{color:#d4703f}
+.hpick .nm span.hurt-grievous{color:var(--crimson);font-weight:600}
 .hpick .pw{font-family:var(--sans);font-size:12px;text-align:right;flex:none}
 .hpick.busy{opacity:.42;cursor:default}
 .hpick.busy:hover{border-color:var(--line)}
@@ -888,6 +894,23 @@ const CONFIG = {
      the only source of its material (§5), so every cost below names at least
      three, and the top levels name all four. An assertion enforces it — this is
      the main structural pressure against holding two zones forever.            */
+  /* §8's constraint is literally "never let a building be buildable from a
+     SINGLE zone's output". Two zones already satisfies that; the three below is
+     a stricter reading I chose, and applying it to first levels too turned out
+     to be a genuine play-flow bug rather than useful pressure.
+
+     Measured on a starter roster, 21 days, real resolver: Thornmarch was sent
+     46 parties and won 5 — an 11% win rate — for 13 hardstone in three weeks,
+     while EVERY first level in the game demanded a danger-3 or danger-4
+     material. So the first building of any kind sat behind the two zones a
+     level-1 roster cannot yet work, and the Training Yard that exists to make
+     those heroes stronger was itself gated on them already being stronger.
+
+     The first level of a building now needs two materials; every level above it
+     still needs three, and the top levels still name all four. The go-wide
+     pressure is intact -- it just starts at the two gentle zones instead of the
+     two lethal ones. See the balance table in CLAUDE.md.                       */
+  KEEP_MIN_MATERIALS_FIRST_LEVEL: 2,
   KEEP_MIN_MATERIALS_PER_UPGRADE: 3,
   BUILDINGS: {
     greatHall: {
@@ -897,7 +920,11 @@ const CONFIG = {
       levels: [
         null,
         { rosterCap:6,  influenceBonus:0.00 },
-        { rosterCap:7,  influenceBonus:0.05, gold:250,  grain:8,  bogiron:5,  hardstone:3 },
+        // First level: the two gentle zones only. Costs MORE material in total
+        // than the version it replaces (19 against 16) -- this is a relocation
+        // of the price into currency a starter roster can actually earn, not a
+        // discount.
+        { rosterCap:7,  influenceBonus:0.05, gold:250,  grain:12, bogiron:7 },
         { rosterCap:8,  influenceBonus:0.10, gold:600,  grain:14, bogiron:10, hardstone:8,  cinderglass:3 },
         { rosterCap:9,  influenceBonus:0.15, gold:1200, grain:20, bogiron:16, hardstone:14, cinderglass:8 },
         { rosterCap:10, influenceBonus:0.20, gold:2400, grain:30, bogiron:24, hardstone:22, cinderglass:16 }
@@ -908,8 +935,15 @@ const CONFIG = {
       blurb: "Somewhere to work while not deployed. Resting heroes earn experience.",
       levels: [
         { xpPerHour:0 },
-        { xpPerHour:2,  gold:150,  grain:4,  hardstone:6,  bogiron:3 },
-        { xpPerHour:4,  gold:400,  grain:8,  hardstone:12, bogiron:6 },
+        // 18 material against the 13 it replaces, and none of it from ground a
+        // level-1 party loses on. This was the worst offender: the building
+        // whose whole job is making heroes stronger asked for six hardstone,
+        // which needed stronger heroes.
+        { xpPerHour:2,  gold:150,  grain:10, bogiron:8 },
+        // Grain and bog-iron raised with the first level, not left behind it:
+        // a second Yard asking for less grain than the first reads as an error
+        // even when the total is higher.
+        { xpPerHour:4,  gold:400,  grain:12, hardstone:12, bogiron:9 },
         { xpPerHour:6,  gold:850,  grain:12, hardstone:18, bogiron:10, cinderglass:4 },
         { xpPerHour:9,  gold:1600, grain:18, hardstone:26, bogiron:15, cinderglass:9 },
         { xpPerHour:12, gold:2900, grain:26, hardstone:36, bogiron:22, cinderglass:18 }
@@ -921,8 +955,11 @@ const CONFIG = {
              "close faster and the exhausted come back sooner.",
       levels: [
         { healRate:1.00, restRate:1.00 },
-        { healRate:1.25, restRate:1.15, gold:180,  grain:6,  bogiron:6,  hardstone:3 },
-        { healRate:1.50, restRate:1.35, gold:450,  grain:11, bogiron:11, hardstone:6 },
+        // 19 material against 15. The first Infirmary is what a new player
+        // reaches for after their first bad week, so it must not be gated on
+        // the ground that gave them the bad week.
+        { healRate:1.25, restRate:1.15, gold:180,  grain:11, bogiron:8 },
+        { healRate:1.50, restRate:1.35, gold:450,  grain:13, bogiron:11, hardstone:6 },
         { healRate:1.85, restRate:1.55, gold:900,  grain:16, bogiron:17, hardstone:10, cinderglass:4 },
         { healRate:2.15, restRate:1.80, gold:1700, grain:23, bogiron:24, hardstone:16, cinderglass:9 },
         // §7: 8/hour resting, 16/hour with Infirmary upgrades -- restRate 2.0 is that ceiling.
@@ -3770,12 +3807,18 @@ function toast(msg){
 
 function setView(v){
   currentView = v;
-  // Leaving the map closes the zone, so the open quest and its half-made party
-  // have to go with it. Only the zone panel's own back button used to clear
-  // these, so leaving by the bottom nav and coming back re-opened the drawer
-  // with the previous picks still lit on what looks like a fresh screen.
-  if (v !== "map"){ openZone = null; selectedQuest = null; picked.clear(); }
-  if (v !== "roster") openHero = null;
+  // A bottom-nav tab always lands on that tab's TOP screen -- including the tab
+  // you are already on. These used to clear only on the way OUT of a view, so
+  // tapping Realm from inside a zone panel, or Roster from inside a hero's
+  // page, left you looking at the same drill-down and the tab read as dead.
+  // The open quest and its half-made party go with the zone, since coming back
+  // to a fresh-looking screen with old picks still lit is its own surprise.
+  // Safe to do unconditionally: setView is only ever called by the three nav
+  // buttons -- the drill-downs are opened by setting these directly.
+  openZone = null;
+  openHero = null;
+  selectedQuest = null;
+  picked.clear();
   ["map","roster","keep"].forEach(n => {
     $("#v-" + n).hidden = n !== v;
     $("#nav-" + n).setAttribute("aria-current", String(n === v));
@@ -4238,10 +4281,16 @@ function renderDrawer(q){
     const busy = !isAvailable(hero);
     const inj = injuryDef(hero.injury.severity);
     let note = hero.cls + " · " + hero.role;
+    // The hurt line is coloured BY SEVERITY rather than one flat red, so the
+    // list can be triaged at a glance: this is the screen where the player
+    // decides who has earned a rest, and a wounded hero reading in the same
+    // grey as everyone else is the reason they get sent out again.
+    let noteCls = "";
     if (busy) note = "in the field";
     else if (inj){
       const sevs = CONFIG.INJURY_SEVERITIES;
       const canWorsen = sevs.findIndex(s => s.id === inj.id) < sevs.length - 1;
+      noteCls = " hurt-" + inj.id;
       note = inj.name.toLowerCase() + " wound · " +
         (canWorsen ? pct(CONFIG.INJURY_WORSEN_CHANCE) + " to worsen if sent"
                    : "cannot get worse") +
@@ -4262,7 +4311,8 @@ function renderDrawer(q){
     h += '<div class="hpick' + (busy ? " busy" : "") + (on ? " sel" : "") +
       '" data-h="' + hero.id + '">' +
       '<span class="tick">' + (on ? icon("sym-check", 11, "#1a1408") : "") + '</span>' +
-      '<span class="nm"><b>' + hero.name + '</b><span>' + note + '</span>' +
+      '<span class="nm"><b>' + hero.name + '</b><span class="note' + noteCls + '">' +
+        (inj && !busy ? icon("sym-warn", 10) + " " : "") + note + '</span>' +
         '<span class="chips">' +
           (counters ? '<span class="chip home">counters the quarry</span>' : '') +
           (hero.traits || []).map(id => '<span class="chip' +
@@ -4836,9 +4886,10 @@ function renderKeep(){
     h += '</div>';
   });
 
-  h += '<div class="tiny dim" style="margin-top:4px">Every upgrade needs materials ' +
-    'from at least ' + CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE + ' different zones, and each ' +
-    'zone is the only source of its own. Holding two zones forever will not build a Keep.</div>';
+  h += '<div class="tiny dim" style="margin-top:4px">A first level needs materials from ' +
+    CONFIG.KEEP_MIN_MATERIALS_FIRST_LEVEL + ' zones; every level above it needs at least ' +
+    CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE + '. Each zone is the only source of its own, ' +
+    'so holding two zones forever will not build a Keep.</div>';
 
   v.innerHTML = h;
   v.querySelectorAll("button[data-up]").forEach(btn => {
@@ -5096,9 +5147,12 @@ function helpSections(){
 
   add("The Keep", '<p>' + spell(Object.keys(CONFIG.BUILDINGS).length) + ' buildings, ' +
     CONFIG.BUILDINGS.greatHall.max +
-    ' levels each. Every upgrade costs gold plus materials from at least <b>' +
-    CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE + ' different regions</b> — which is why ' +
-    'going wide is a prerequisite and not a preference.</p>' +
+    ' levels each. A building&rsquo;s <b>first</b> level costs gold plus materials from ' +
+    '<b>' + CONFIG.KEEP_MIN_MATERIALS_FIRST_LEVEL + ' regions</b>, and those are the two ' +
+    'gentlest — the Keep you start is meant to be reachable. Every level above it needs ' +
+    'at least <b>' + CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE + ' different regions</b> and ' +
+    'the top levels name all four, which is why going wide is a prerequisite and not a ' +
+    'preference.</p>' +
     dl(Object.keys(CONFIG.BUILDINGS).map(id =>
       ["<b>" + CONFIG.BUILDINGS[id].name + "</b>", CONFIG.BUILDINGS[id].blurb])) +
     '<p>New heroes come from the map, not from coin: a named recruit offers ' +
@@ -5731,6 +5785,7 @@ function assertAll(){
       ["worsening a wound on redeploy", "<b>30%</b> that the wound worsens"],
       ["the Mark chance", "<b>25%</b> chance of a permanent Mark"],
       ["resting recovery", "<b>8 an hour</b> resting"],
+      ["two materials for a first level", "<b>2 regions</b>"],
       ["three materials per upgrade", "<b>3 different regions</b>"],
       ["the branch level", "At level <b>10</b>"]
     ];
@@ -5867,6 +5922,49 @@ function assertAll(){
     // And the whole thing must still be a save the game can run.
     if (!Array.isArray(m.heroes) || !m.heroes.length) return "the roster did not survive";
     return true;
+  });
+
+  chk("a nav tab always lands on that tab's top screen", () => {
+    // These used to clear only on the way OUT of a view, so tapping the tab you
+    // were already on did nothing: Realm from inside a zone panel left you on
+    // the zone, Roster from inside a hero left you on the hero, and the tab
+    // read as broken. Drives the REAL click handlers, because the bug was in
+    // what the handler does and not in setView's signature.
+    const realView = currentView, realZone = openZone, realHero = openHero,
+          realSel = selectedQuest, realPicked = [...picked];
+    try {
+      // Buried as deep as the map goes: zone open, quest open, party half made.
+      currentView = "map";
+      openZone = state.zones[0].id;
+      const q = state.zones[0].slate[0];
+      selectedQuest = q ? q.id : null;
+      picked.clear(); if (state.heroes[0]) picked.add(state.heroes[0].id);
+      render();
+      $("#nav-map").click();
+      if (openZone !== null) return "tapping Realm left the zone panel open";
+      if (selectedQuest !== null) return "tapping Realm left a quest selected";
+      if (picked.size !== 0) return "tapping Realm kept a half-made party";
+      if (!document.querySelector("#map-svg")) return "tapping Realm did not render the map";
+
+      // And the same for the roster's drill-down.
+      $("#nav-roster").click();
+      openHero = state.heroes[0].id;
+      render();
+      $("#nav-roster").click();
+      if (openHero !== null) return "tapping Roster left a hero's page open";
+      if (!document.querySelector("#v-roster .hero"))
+        return "tapping Roster did not render the roster list";
+
+      // A tab must still take you somewhere else when you are not on it.
+      $("#nav-keep").click();
+      if (currentView !== "keep") return "tapping Keep did not switch views";
+      return true;
+    } finally {
+      currentView = realView; openZone = realZone; openHero = realHero;
+      selectedQuest = realSel;
+      picked.clear(); realPicked.forEach(id => picked.add(id));
+      render();
+    }
   });
 
   chk("a styled quest card actually wears its class", () => {
@@ -7094,7 +7192,19 @@ function assertAll(){
         const row = b.levels[lv];
         if (!row) return id + " level " + lv + " has no row";
         const used = mats.filter(m => (row[m] || 0) > 0);
-        if (used.length < CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE)
+        // §8's literal constraint, asserted at EVERY level and not derived from
+        // either constant: no building may be funded from one zone's output.
+        // This is the rule the relaxation below must never be allowed to eat.
+        if (used.length < 2)
+          return id + " level " + lv + " is fundable from one zone (" +
+                 (used.join(", ") || "nothing") + ")";
+        // The first level of a building is deliberately looser: it is what a
+        // new player reaches for, and requiring three materials put every one
+        // of them behind ground a starter roster loses on.
+        const floor = (lv === b.start + 1)
+          ? CONFIG.KEEP_MIN_MATERIALS_FIRST_LEVEL
+          : CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE;
+        if (used.length < floor)
           return id + " level " + lv + " needs only " + used.length +
                  " material(s) (" + (used.join(", ") || "none") + ")";
         if (!(row.gold > 0)) return id + " level " + lv + " costs no gold";
@@ -7104,6 +7214,46 @@ function assertAll(){
       }
     }
     return true;
+  });
+
+  chk("a new player can build something from the ground they can hold", () => {
+    // The check that was missing. Every material rule here was about how MANY
+    // zones an upgrade needs and none about WHICH, so all six buildings ended up
+    // with a danger-3 or danger-4 material at level one -- and a starter roster
+    // wins 11% of its Thornmarch quests. The Training Yard, whose entire job is
+    // making heroes stronger, was gated on heroes already being stronger.
+    //
+    // The rule asserted is the player's experience, not a constant: the first
+    // level of the buildings a new Keep reaches for must be payable out of the
+    // two gentlest zones alone.
+    const byDanger = CONFIG.ZONES.slice().sort((a, b) => a.danger - b.danger);
+    const gentle = new Set(byDanger.slice(0, 2).map(z => z.material));
+    const harsh = byDanger.slice(2).map(z => z.name).join(" or ");
+    const starters = ["greatHall", "trainingYard", "infirmary"];
+    for (const id of starters){
+      const b = CONFIG.BUILDINGS[id];
+      if (!b) return "no building called " + id;
+      const row = b.levels[b.start + 1];
+      const need = Object.keys(CONFIG.MATERIALS).filter(m => (row[m] || 0) > 0);
+      const blocked = need.filter(m => !gentle.has(m));
+      if (blocked.length)
+        return b.name + "'s first level needs " + blocked.join(", ") +
+               ", which only comes from " + harsh;
+      // And it must still take two zones -- the relief is about which ground,
+      // never about letting one zone fund a building on its own.
+      if (need.length < 2)
+        return b.name + "'s first level is fundable from one zone";
+    }
+    // At least one building must remain a genuine early goal rather than all
+    // six becoming free: the levels ABOVE the first still reach for hard ground.
+    const anyHard = Object.keys(CONFIG.BUILDINGS).some(id => {
+      const b = CONFIG.BUILDINGS[id];
+      for (let lv = b.start + 2; lv <= b.max; lv++)
+        if (Object.keys(CONFIG.MATERIALS).some(m => (b.levels[lv][m] || 0) > 0 && !gentle.has(m)))
+          return true;
+      return false;
+    });
+    return anyHard ? true : "no upgrade anywhere needs the dangerous zones";
   });
 
   chk("Keep upgrades cost strictly more as they go up", () => {
@@ -7116,6 +7266,17 @@ function assertAll(){
         const total = mats.reduce((n, m) => n + (row[m] || 0), 0);
         if (row.gold <= prevGold) return id + " level " + lv + " costs no more gold than level " + (lv - 1);
         if (total <= prevTotal) return id + " level " + lv + " costs no more material than level " + (lv - 1);
+        // Per-material too, not just the total. Relocating the first level's
+        // cost onto grain and bog-iron left the Training Yard's SECOND level
+        // asking for less grain than its first -- the total still rose, so this
+        // check passed while the screen showed a cost going backwards.
+        if (lv > b.start + 1)
+          for (const m of mats){
+            const prev = b.levels[lv - 1][m] || 0;
+            if (prev > 0 && (row[m] || 0) < prev)
+              return id + " level " + lv + " needs less " + m + " than level " + (lv - 1) +
+                     " (" + prev + " -> " + (row[m] || 0) + ")";
+          }
         prevGold = row.gold; prevTotal = total;
       }
     }
@@ -8366,6 +8527,36 @@ function falsify(opts){
               CONFIG.MODAL_FOCUS_SELECTOR =
                 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'; },
       () => { CONFIG.MODAL_FOCUS_SELECTOR = keep.mfs; }],
+    ["an upgrade that needs less of a material than the level below it",
+      "Keep upgrades cost strictly more as they go up",
+      () => { keep.tyG = CONFIG.BUILDINGS.trainingYard.levels[2].grain;
+              CONFIG.BUILDINGS.trainingYard.levels[2].grain = 1; },
+      () => { CONFIG.BUILDINGS.trainingYard.levels[2].grain = keep.tyG; }],
+    ["a first building behind the dangerous zones",
+      "a new player can build something from the ground they can hold",
+      () => { keep.tyHard = CONFIG.BUILDINGS.trainingYard.levels[1].hardstone;
+              CONFIG.BUILDINGS.trainingYard.levels[1].hardstone = 6; },
+      () => { if (keep.tyHard === undefined) delete CONFIG.BUILDINGS.trainingYard.levels[1].hardstone;
+              else CONFIG.BUILDINGS.trainingYard.levels[1].hardstone = keep.tyHard; }],
+    ["a Keep with nothing left to reach for",
+      "a new player can build something from the ground they can hold",
+      () => { keep.hardRows = [];
+              Object.keys(CONFIG.BUILDINGS).forEach(id => {
+                const b = CONFIG.BUILDINGS[id];
+                for (let lv = b.start + 2; lv <= b.max; lv++){
+                  keep.hardRows.push([id, lv, b.levels[lv].hardstone, b.levels[lv].cinderglass]);
+                  delete b.levels[lv].hardstone; delete b.levels[lv].cinderglass;
+                }
+              }); },
+      () => { keep.hardRows.forEach(([id, lv, hs, cg]) => {
+                if (hs !== undefined) CONFIG.BUILDINGS[id].levels[lv].hardstone = hs;
+                if (cg !== undefined) CONFIG.BUILDINGS[id].levels[lv].cinderglass = cg;
+              }); }],
+    ["a first level fundable from one zone alone",
+      "no building is buildable from one zone's output",
+      () => { keep.fl = CONFIG.BUILDINGS.infirmary.levels[1].bogiron;
+              delete CONFIG.BUILDINGS.infirmary.levels[1].bogiron; },
+      () => { CONFIG.BUILDINGS.infirmary.levels[1].bogiron = keep.fl; }],
     ["a stash cap the loader ignores", "a save written before gear existed loads clean",
       () => { keep.gs = CONFIG.GEAR_STASH_MAX; CONFIG.GEAR_STASH_MAX = 1e9; },
       () => { CONFIG.GEAR_STASH_MAX = keep.gs; }],
@@ -8639,11 +8830,15 @@ function falsify(opts){
     ["every tick recorded as an absence", "an absence is summarised, not just the quests",
       () => { keep.ab2 = CONFIG.REPORT_MIN_ABSENCE_MS; CONFIG.REPORT_MIN_ABSENCE_MS = 0; },
       () => { CONFIG.REPORT_MIN_ABSENCE_MS = keep.ab2; }],
-    ["a building fundable from two zones", "no building is buildable from one zone's output",
-      () => { keep.gh = CONFIG.BUILDINGS.greatHall.levels[2];
-              CONFIG.BUILDINGS.greatHall.levels[2] =
-                { rosterCap:7, influenceBonus:0.05, gold:250, grain:8, bogiron:5 }; },
-      () => { CONFIG.BUILDINGS.greatHall.levels[2] = keep.gh; }],
+    // Aimed at level THREE, not two. Level two is the Great Hall's first level,
+    // where two materials is now legal on purpose -- pointed there, this probe
+    // quietly stopped breaking anything and would have reported as a miss.
+    ["an upgrade above the first fundable from two zones",
+      "no building is buildable from one zone's output",
+      () => { keep.gh3 = CONFIG.BUILDINGS.greatHall.levels[3];
+              CONFIG.BUILDINGS.greatHall.levels[3] =
+                { rosterCap:8, influenceBonus:0.10, gold:600, grain:14, bogiron:10 }; },
+      () => { CONFIG.BUILDINGS.greatHall.levels[3] = keep.gh3; }],
     ["a free Keep upgrade", "no building is buildable from one zone's output",
       () => { keep.ig = CONFIG.BUILDINGS.infirmary.levels[1].gold;
               CONFIG.BUILDINGS.infirmary.levels[1].gold = 0; },
@@ -8873,6 +9068,11 @@ function falsify(opts){
   // would be worse than saying so. Both are listed with the reason, and both
   // still count as gaps -- just declared ones.
   const UNPROBEABLE = {
+    "a nav tab always lands on that tab's top screen":
+      "guards four unconditional assignments inside setView(). No constant adds or " +
+      "removes a statement, and the only lever that touches this path -- unbinding a " +
+      "nav handler -- makes the check fail because nothing happened at all rather than " +
+      "because the drill-down survived, which would prove the wrong thing",
     "a styled quest card actually wears its class":
       "guards that a CSS rule and the code that applies its class stay wired together. " +
       "No constant adds or removes a class name from a string concatenation, and every " +
