@@ -192,7 +192,12 @@ button{font-family:var(--sans)}
 .hpick.sel{border-color:var(--gold);background:rgba(201,162,39,.09);
   box-shadow:inset 0 0 0 2px var(--gold-dim)}
 .hpick .nm{flex:1;min-width:0}
-.hpick .nm b{display:block;font-weight:600;font-size:13.5px}
+.hpick .nm b{display:flex;align-items:baseline;gap:6px;font-weight:600;font-size:13.5px}
+.hpick .nm b .lvl{font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);border:1px solid var(--line2);
+  border-radius:3px;padding:0 5px;flex:none;white-space:nowrap}
+.hpick .nm b .lvl i{font-style:normal}
+.hpick.sel .nm b .lvl{border-color:var(--gold-dim);color:var(--t4)}
 .hpick.sel .nm b{color:var(--t4)}
 .hpick .nm span{font-family:var(--sans);font-size:11px;color:var(--muted)}
 .hpick .nm span.note{display:inline-flex;align-items:center;gap:3px}
@@ -288,6 +293,17 @@ button{font-family:var(--sans)}
 .shelfitem{text-align:left;line-height:1.25}
 .shelfitem span{display:block;font-size:10px;color:var(--muted);letter-spacing:.05em;
   text-transform:uppercase}
+/* The delta line. Normal case and letter spacing so it reads as a sentence of
+   numbers rather than another label. */
+.gd{font-family:var(--sans);font-size:10.5px;color:var(--muted)}
+/* All of this must out-specify `.shelfitem span`, which uppercases and greys the
+   slot label. A class alone loses to a class-plus-type, and the nested good/bad
+   spans are descendants too -- so the deltas came out shouting AND colourless
+   until each was named explicitly. */
+.shelfitem .gd{margin-top:2px}
+.shelfitem .gd, .shelfitem .gd span{letter-spacing:0;text-transform:none}
+.shelfitem .gd .good{color:var(--verd)}
+.shelfitem .gd .bad{color:var(--crimson)}
 .gearrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
 .gearrow:last-child{border-bottom:0}
 .gearrow .gi{flex:1;min-width:0}
@@ -2762,6 +2778,48 @@ function salvageGear(index){
   save();
   return true;
 }
+/* What putting this item in its slot would actually do to this hero, measured
+   against whatever they are carrying there now.
+
+   Deliberately computed by swapping the item in and re-running the REAL
+   accumulator rather than reading CONFIG.GEAR_EFFECTS and describing it: a
+   description assembled from the table would quietly stop matching the moment
+   any trait, Mark or subclass interacted with the same number -- and a Warden's
+   party bonus, a Berserker's injury multiplier and Cautious all touch exactly
+   these. `it` may be null, which asks what taking the current item OFF costs.
+
+   The swap is restored in a finally: this runs during render, and leaving a
+   hero wearing a hypothetical is not a class of bug worth risking. */
+function gearDelta(h, slot, it){
+  if (!h || !h.gear) return "";
+  const keepIt = h.gear[slot];
+  const measure = () => {
+    const fx = traitEffects(h);
+    return { power: heroStat(h, "power"), injury: fx.injuryMult, infl: fx.influenceBonus };
+  };
+  let before, after;
+  try {
+    before = measure();
+    h.gear[slot] = it || null;
+    after = measure();
+  } finally { h.gear[slot] = keepIt; }
+
+  const parts = [];
+  const dp = after.power - before.power;
+  if (Math.abs(dp) >= 0.05)
+    parts.push('<span class="' + (dp > 0 ? "good" : "bad") + '">' +
+      (dp > 0 ? "+" : "") + round1(dp) + " Power</span>");
+  const di = after.injury - before.injury;
+  if (Math.abs(di) > 1e-9)
+    parts.push('<span class="' + (di < 0 ? "good" : "bad") + '">' +
+      (di > 0 ? "+" : "") + Math.round(di * 100) + "% hurt risk</span>");
+  const dn = after.infl - before.infl;
+  if (Math.abs(dn) > 1e-9)
+    parts.push('<span class="' + (dn > 0 ? "good" : "bad") + '">' +
+      (dn > 0 ? "+" : "") + Math.round(dn * 100) + "% standing</span>");
+  return parts.join(" · ");
+}
+
 /* Equip from the stash. Anything already in that slot goes back to the stash
    rather than being destroyed -- swapping kit must never cost the player an
    item they earned. */
@@ -4276,7 +4334,11 @@ function renderDrawer(q){
   ordered.forEach(hero => {
     const busy = !isAvailable(hero);
     const inj = injuryDef(hero.injury.severity);
-    let note = hero.cls + " · " + hero.role;
+    // The BRANCH name, not the base class. The roster has always shown "Knight";
+    // this screen said "Warrior", which is the wrong word on the one page where
+    // the player is judging how dangerous a hero can afford to be.
+    const sub = subclassDef(hero);
+    let note = (sub ? sub.name : hero.cls) + " · " + hero.role;
     // The hurt line is coloured BY SEVERITY rather than one flat red, so the
     // list can be triaged at a glance: this is the screen where the player
     // decides who has earned a rest, and a wounded hero reading in the same
@@ -4308,7 +4370,13 @@ function renderDrawer(q){
     // reading it aloud.
     h += '<div class="hpick' + (busy ? " busy" : "") + (on ? " sel" : "") +
       '" data-h="' + hero.id + '">' +
-      '<span class="nm"><b>' + hero.name + '</b><span class="note' + noteCls + '">' +
+      // Level sits on the NAME line, not in the note: a wounded hero's note is
+      // replaced wholesale by the wound, and the level must not vanish on
+      // exactly the rows the player is weighing hardest.
+      '<span class="nm"><b>' + hero.name +
+        '<span class="lvl">Lv ' + hero.level +
+        (awaitingSubclass(hero) ? ' <i class="branchdot">branch</i>' : '') + '</span></b>' +
+        '<span class="note' + noteCls + '">' +
         (inj && !busy ? icon("sym-warn", 10) + " " : "") + note + '</span>' +
         '<span class="chips">' +
           (counters ? '<span class="chip home">counters the quarry</span>' : '') +
@@ -4330,9 +4398,14 @@ function renderDrawer(q){
       '<div><span>Difficulty</span><b>' + round1(pv.diff) + '</b></div>' +
       '<div><span>' + (pv.stages > 1 ? "Per stage" : "Success") + '</span>' +
         '<b class="' + chanceCls + '">' + pct(pv.chance) + '</b></div>' +
+      // "5% -> 9%" read as a TRANSITION: add a hero, watch the small number
+      // turn into the big one, conclude that more bodies means more danger. It
+      // is the opposite -- overstaffing lowers both figures. The two numbers are
+      // the expected risk and the worst branch, so they are labelled as such
+      // and the arrow is gone.
       '<div><span>Hurt risk</span><b class="' + hurtCls + '">' + pct(pv.expectedHurt) +
         (pv.worst > pv.expectedHurt + 0.02
-          ? ' <span class="dim">→ ' + pct(pv.worst) + '</span>' : '') + '</b></div>' +
+          ? ' <span class="dim">· up to ' + pct(pv.worst) + '</span>' : '') + '</b></div>' +
       '<div><span>Time</span><b>' + fmtDurLong(pv.duration) + '</b></div>' +
       '<div><span>Banner</span><b class="good">+' + round1(pv.influence) + '</b></div>' +
       '</div>';
@@ -4343,8 +4416,9 @@ function renderDrawer(q){
         pct(Math.pow(pv.chance, pv.stages)) + '</b>. Every stage entered is another ' +
         'chance to be hurt, which is why the risk above is what it is.</div>';
     if (pv.worst > pv.expectedHurt + 0.02)
-      h += '<div class="tiny dim" style="margin:-3px 0 7px">Hurt risk is the ' +
-        'probability-weighted figure; the second number is the worst way it can go.</div>';
+      h += '<div class="tiny dim" style="margin:-3px 0 7px">Hurt risk is what the ' +
+        'most exposed hero can expect. <b>Up to</b> is the worst way this can go, ' +
+        'not what it becomes — sending more heroes lowers both.</div>';
     if (pv.counter !== 1)
       h += '<div class="tiny ' + (pv.counter > 1 ? "good" : "warn") + '" style="margin-bottom:7px">' +
         (pv.counter > 1
@@ -4692,7 +4766,12 @@ function renderHeroDetail(v){
     th += '<div class="tiny dim" style="margin-top:6px">' +
       CONFIG.GEAR_SLOTS.filter(s => equipped(h, s)).map(s => {
         const it = equipped(h, s), d = gearDef(it.id);
-        return '<b>' + gearName(it) + '</b> — ' + d.flavor;
+        // What this piece is worth right now, stated as what taking it off
+        // would cost -- the same figure, from the direction the player cares
+        // about when deciding whether to move it to someone else.
+        const worth = gearDelta(h, s, null);
+        return '<b>' + gearName(it) + '</b> — ' + d.flavor +
+          (worth ? '<br><span class="gd">Removing it: ' + worth + '</span>' : '');
       }).join('<br>') + '</div>';
 
   // What is on the shelf that this hero could take, grouped by slot.
@@ -4702,10 +4781,17 @@ function renderHeroDetail(v){
       ' Kit cannot be changed while they are in the field — the odds for that ' +
       'quest were fixed when it was posted.</div>';
   } else if (fits.length){
+    // Every shelf entry says what taking it would do TO THIS HERO, against
+    // whatever is in that slot now -- so an upgrade and a sidegrade are told
+    // apart before the tap rather than after it.
     th += '<h3 style="margin-top:11px">The Shelf</h3><div class="shelf">' +
-      fits.map(x => '<button class="btn sm shelfitem" data-equip="' + x.i + '">' +
-        gearName(x.it) + '<span>' + SLOT_LABEL[x.def.slot] + ' · tier ' + gearTier(x.it) +
-        '</span></button>').join("") + '</div>';
+      fits.map(x => {
+        const d = gearDelta(h, x.def.slot, x.it);
+        return '<button class="btn sm shelfitem" data-equip="' + x.i + '">' +
+          gearName(x.it) + '<span>' + SLOT_LABEL[x.def.slot] + ' · tier ' + gearTier(x.it) +
+          '</span>' + (d ? '<span class="gd">' + d + '</span>'
+                         : '<span class="gd dim">no change</span>') + '</button>';
+      }).join("") + '</div>';
   } else {
     th += '<div class="tiny dim" style="margin-top:8px">Nothing on the shelf. Gear ' +
       'comes back from Clear, Hunt and Delve work.</div>';
@@ -6085,6 +6171,71 @@ function assertAll(){
         return "an unknown item still changed a stat";
       return true;
     } finally { state = real; }
+  });
+
+  chk("the gear preview promises what equipping actually does", () => {
+    // Same rule as the hurt-risk readout: a number shown to the player is
+    // checked against what really happens, by doing the thing and measuring.
+    const real = state, wasDisarmed = savesDisarmed;
+    try {
+      savesDisarmed = true;                       // equipGear saves
+      state = JSON.parse(JSON.stringify(real));
+      const h = state.heroes[0];
+      h.status = "idle";
+      h.gear = { weapon:null, armor:null, trinket:null };
+      const top = CONFIG.GEAR_TIER_MAX;
+
+      // The preview must not leave the hero wearing the hypothetical.
+      const snapshot = JSON.stringify(h.gear);
+      gearDelta(h, "weapon", { id: GEAR.weapon[top][0].id, tier: top });
+      if (JSON.stringify(h.gear) !== snapshot)
+        return "previewing an item changed what the hero is carrying";
+
+      // What it promises is what it delivers, for every slot.
+      for (const slot of CONFIG.GEAR_SLOTS){
+        const it = { id: GEAR[slot][top][0].id, tier: top };
+        const before = { power: heroStat(h, "power"),
+                         injury: traitEffects(h).injuryMult,
+                         infl: traitEffects(h).influenceBonus };
+        const promised = gearDelta(h, slot, it);
+        if (!promised) return "the preview promises nothing for a top-tier " + slot;
+        state.stash = [it];
+        if (!equipGear(h, 0)) return "could not equip the " + slot + " being previewed";
+        const after = { power: heroStat(h, "power"),
+                        injury: traitEffects(h).injuryMult,
+                        infl: traitEffects(h).influenceBonus };
+        // Each promised figure has to match the real move, in the same rounding
+        // the player was shown.
+        if (/Power/.test(promised)){
+          const said = Number((promised.match(/([+-]?[\d.]+) Power/) || [])[1]);
+          if (Math.abs(said - round1(after.power - before.power)) > 0.05)
+            return slot + " promised " + said + " Power and delivered " +
+                   round1(after.power - before.power);
+        }
+        if (/hurt risk/.test(promised)){
+          const said = Number((promised.match(/([+-]?\d+)% hurt risk/) || [])[1]);
+          if (said !== Math.round((after.injury - before.injury) * 100))
+            return slot + " promised " + said + "% hurt risk and delivered " +
+                   Math.round((after.injury - before.injury) * 100);
+        }
+        if (/standing/.test(promised)){
+          const said = Number((promised.match(/([+-]?\d+)% standing/) || [])[1]);
+          if (said !== Math.round((after.infl - before.infl) * 100))
+            return slot + " promised " + said + "% standing and delivered " +
+                   Math.round((after.infl - before.infl) * 100);
+        }
+      }
+
+      // A swap for the same tier in the same slot is a sidegrade and must say so,
+      // or every shelf entry looks like an upgrade.
+      const same = GEAR.weapon[top];
+      if (same.length > 1){
+        h.gear.weapon = { id: same[0].id, tier: top };
+        if (gearDelta(h, "weapon", { id: same[1].id, tier: top }) !== "")
+          return "a same-tier swap was reported as a change";
+      }
+      return true;
+    } finally { savesDisarmed = wasDisarmed; state = real; }
   });
 
   chk("the Sanctum lifts a Mark, takes payment, and refuses when it cannot", () => {
@@ -9068,6 +9219,11 @@ function falsify(opts){
   // would be worse than saying so. Both are listed with the reason, and both
   // still count as gaps -- just declared ones.
   const UNPROBEABLE = {
+    "the gear preview promises what equipping actually does":
+      "the preview and the outcome both run traitEffects(), deliberately -- computing " +
+      "the promise any other way is exactly the drift this check exists to prevent. So " +
+      "every constant moves both sides together and only a code change can separate " +
+      "them, which is the point. Same reasoning as the hurt-risk reconciliation",
     "a nav tab always lands on that tab's top screen":
       "guards four unconditional assignments inside setView(). No constant adds or " +
       "removes a statement, and the only lever that touches this path -- unbinding a " +
