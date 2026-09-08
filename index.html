@@ -937,7 +937,13 @@ const CONFIG = {
         // of the price into currency a starter roster can actually earn, not a
         // discount.
         { rosterCap:7,  influenceBonus:0.05, gold:250,  grain:12, bogiron:7 },
-        { rosterCap:8,  influenceBonus:0.10, gold:600,  grain:14, bogiron:10, hardstone:8,  cinderglass:3 },
+        // No cinderglass. A recruit needs their OWN zone at Honored, so the
+        // second bed is wanted while two or three zones are working -- and
+        // asking for the Ashen Reach's material at that point put the bed 25
+        // measured days behind the person who wanted it. The cap now climbs on
+        // the same ground the recruits come from: two zones, then three, then
+        // all four. Still three materials, so the multi-zone rule is untouched.
+        { rosterCap:8,  influenceBonus:0.10, gold:600,  grain:14, bogiron:10, hardstone:8 },
         { rosterCap:9,  influenceBonus:0.15, gold:1200, grain:20, bogiron:16, hardstone:14, cinderglass:8 },
         { rosterCap:10, influenceBonus:0.20, gold:2400, grain:30, bogiron:24, hardstone:22, cinderglass:16 }
       ]
@@ -1145,6 +1151,43 @@ const CONFIG = {
   // a permanent tax rather than a loop. Reclaim campaigns, the other way back,
   // are deferred by §14. See Open Decision #9.
   INCURSION_ANSWERED_RIVAL: 9,
+
+  /* The valve BELOW the raid threshold ------------------------------------
+     Every way down was gated at rival 60+: answering a raid, or winning a
+     Reclaim. Below that the track was monotonic -- §4 has the rival taking half
+     of everything decay costs you, and nothing gave any of it back -- so a zone
+     drifted up, began raiding, and stayed at the threshold forever.
+
+     Measured over 45 simulated days before this existed: a bot that answered
+     EVERY raid still ended with all four rivals at 55-63, permanently in raid
+     range; a bot that ignored them ignored 565 raids, ended with every rival
+     pinned at 100, every material at zero and not one building raised, because
+     ignored raids strip exactly the advanced materials the Keep is trying to
+     save. The two things Rob reported -- no beds for recruits, and no way to
+     hold a rival down -- were the same defect seen from two ends.
+
+     The inverse of neglect is presence, so presence is what pays: any success
+     in a zone pushes the rival back, and a Patrol -- the quest whose entire job
+     is being seen -- pushes back several times as hard. That also gives Patrol
+     a reason to exist beyond halving decay, which the Phase 3 table had it
+     dead last on influence per hero-hour.
+
+     Sized against what the rival actually GAINS, not guessed. Decay hands it
+     half of everything it takes, which is 6 a day at Honored and 9.6 at
+     Sovereign. At a push of 1 the valve was decorative -- median rival 60 to 59
+     across five 45-day runs. At 3 it removed raids from an engaged player's
+     game entirely (0 of 12 zones ever reached the threshold), which is too
+     much: slipping should still cost. At 2, with Patrol at 3x:
+
+       median rival 54, worst 63 -- raids still happen, but only when earned
+       ignored raids per run 42 -> 3
+       recruits housed 11 -> 12 of 12, buildings raised 24 -> 28
+
+     And the Patrol number has a plain meaning worth keeping: 2 x 3 = 6 is
+     exactly one day of an Honored zone's drift, so ONE Patrol undoes ONE day
+     of neglect.                                                              */
+  RIVAL_PUSH_ON_SUCCESS: 2,
+  RIVAL_PUSH_PATROL_MULT: 3,
 
   /* Consolidation (§4): the ratchet ---------------------------------------
      A Charter buys a permanent decay floor at the bottom of the current tier.
@@ -3453,22 +3496,29 @@ function resolveQuest(aq, atMs){
       state.charters += type.charter;
       report.charters = type.charter;
     }
-    if (aq.incursion){
-      const was = zs.rival;
+    // --- the rival gives ground ------------------------------------------
+    // All three effects measured from ONE starting value and reported once.
+    // Written as three separate `report.rivalPushed =` assignments, an answered
+    // raid that was also a Reclaim would have reported only the last of them.
+    const rivalAtStart = zs.rival;
+    // Presence. Any success pushes back; a Patrol, whose whole job is being
+    // seen, pushes back several times as hard. This is the only valve that
+    // works BELOW the raid threshold, and without it the track is monotonic.
+    const push = CONFIG.RIVAL_PUSH_ON_SUCCESS *
+      (aq.type === "patrol" ? CONFIG.RIVAL_PUSH_PATROL_MULT : 1);
+    zs.rival = clamp(0, CONFIG.RIVAL_MAX, zs.rival - push);
+    if (aq.incursion)
       zs.rival = clamp(0, CONFIG.RIVAL_MAX, zs.rival - CONFIG.INCURSION_ANSWERED_RIVAL);
-      report.rivalPushed = round1(was - zs.rival);
-    }
     // §4's own number: a won campaign drops the rival TO 40, it does not
     // subtract 40. That distinction is the whole point -- the worse the hold
     // was, the more a Reclaim is worth, so the campaign is always the answer to
     // a zone that has genuinely gone rather than a flat discount on one that
     // has not. Never raises it: a rival already below the line is left alone.
     if (aq.type === "reclaim"){
-      const was = zs.rival;
       zs.rival = Math.min(zs.rival, CONFIG.RECLAIM_RIVAL_TO);
-      report.rivalPushed = round1(was - zs.rival);
       report.reclaimed = true;
     }
+    if (zs.rival < rivalAtStart) report.rivalPushed = round1(rivalAtStart - zs.rival);
     if (type.intel){
       zs.intelUntil = atMs + CONFIG.INTEL_DURATION_MS;
       report.intel = true;
@@ -5081,7 +5131,9 @@ function helpSections(){
     '<p><b>Decay rises with the tier.</b> The better you are doing somewhere, the more ' +
     'it costs to stay there — which is why holding four regions at once is the hard ' +
     'thing this game is about, and why a region nobody has heard of costs nothing.</p>' +
-    '<p>A <b>Patrol</b> running in a region halves its decay for as long as it lasts. ' +
+    '<p>A <b>Patrol</b> running in a region halves its decay for as long as it lasts, ' +
+    'and pushes the rival back hardest of any ordinary job — one Patrol undoes about ' +
+    'a day of an Honored region drifting. ' +
     'Posting one before you close the tab is the cheapest thing you can do.</p>');
 
   add("Danger, rivals and raids", '<p>The diamonds beside a region are its ' +
@@ -5090,7 +5142,13 @@ function helpSections(){
     'being hurt. It is the whole reason the map is not four copies of the same place.</p>' +
     '<p>Each region also has someone else who wants it. The <b>rival</b> track climbs ' +
     'as your standing decays and by <b>' + CONFIG.RIVAL_GAIN_ON_FAIL + '</b> every ' +
-    'time a job there fails.</p>' + dl([
+    'time a job there fails.</p>' +
+    '<p><b>Working a region pushes its rival back.</b> Every job you finish there ' +
+    'takes <b>' + CONFIG.RIVAL_PUSH_ON_SUCCESS + '</b> off the track, and a Patrol ' +
+    'takes <b>' + (CONFIG.RIVAL_PUSH_ON_SUCCESS * CONFIG.RIVAL_PUSH_PATROL_MULT) +
+    '</b> — which is about what a day of drift at Honored puts on. That is the ' +
+    'only lever that works <em>before</em> things get bad; everything below only ' +
+    'opens once they already have.</p>' + dl([
       // Both of these begin at the same number, so they are one entry. Two
       // headings reading "Rival 60+" taught the player there were two
       // thresholds, and the tutorial's own duplicate-literal check caught it.
@@ -6351,11 +6409,13 @@ function assertAll(){
       resolveQuest(aq, t);
       if (z.rival !== CONFIG.RECLAIM_RIVAL_TO)
         return "a won Reclaim left the rival at " + round1(z.rival);
-      // And never RAISES a rival that was already below the line.
+      // And never RAISES a rival that was already below the line. It may lower
+      // it further -- every success now pushes back a little -- so the rule is
+      // "never up", not "never changes".
       z.rival = 10;
       state.heroes.slice(0, party.length).forEach(x => { x.status = "idle"; });
       resolveQuest(aq, t);
-      if (z.rival !== 10) return "a Reclaim pushed a low rival back UP to " + round1(z.rival);
+      if (z.rival > 10) return "a Reclaim raised a low rival to " + round1(z.rival);
       return true;
     } finally { state = real; }
   });
@@ -6965,35 +7025,46 @@ function assertAll(){
     } finally { state = real; }
   });
 
-  chk("answering a raid pushes the rival back", () => {
-    // Rival rises on decay and on failure and falls nowhere else in v1, so
-    // without this a zone that once touched 60 raids forever.
+  chk("presence pushes the rival back, and a raid pushes it back hardest", () => {
+    // The rival used to fall ONLY at 60+, so below the threshold the track was
+    // monotonic and a drifting zone was on a one-way trip. Three sizes of push
+    // now exist and their ORDER is the design: any success < a Patrol < an
+    // answered raid. Asserting the order rather than the constants is what
+    // stops a retune quietly inverting them.
     const real = state;
     try {
       state = JSON.parse(JSON.stringify(real));
       const z = state.zones[0];
-      z.rival = CONFIG.INCURSION_RIVAL_MIN + 5;
       z.influence = 50;
+      const start = CONFIG.INCURSION_RIVAL_MIN + 5;
+      const run = extra => {
+        z.rival = start;
+        state.pendingReports = [];
+        resolveQuest(Object.assign({ questId:"probe", zoneId: z.id, type:"clear",
+          typeName:"Clear", stat:"power", stages:1, name:"P", length:"short",
+          heroIds:[], ratio:5, chance:1, startedAt:0, completesAt:0, gold:0,
+          material:0, influence:1, locked:false, staffCount:2, required:2 },
+          extra), nowMs());
+        return { rival: z.rival, rep: state.pendingReports[0] };
+      };
+      const ordinary = run({});
+      if (!ordinary.rep.success) return "the probe did not succeed at chance 1";
+      if (!(ordinary.rival < start))
+        return "an ordinary success left the rival untouched at " + round1(ordinary.rival);
+      const patrol = run({ type:"patrol", typeName:"Patrol" });
+      if (!(patrol.rival < ordinary.rival))
+        return "a Patrol pushes the rival back no harder than any other success";
+      const raid = run({ incursion:true });
+      if (!(raid.rival < patrol.rival))
+        return "answering a raid pushes back no harder than a Patrol";
+      if (!raid.rep.rivalPushed)
+        return "the report does not mention the rival being pushed back";
+      // Never below zero, and a failure must still cost.
+      z.rival = 0.5;
       state.pendingReports = [];
-      const before = z.rival;
-      resolveQuest({ questId:"probe", zoneId: z.id, type:"clear", typeName:"Clear",
-        stat:"power", stages:1, name:"Raid", length:"short", heroIds:[],
-        ratio:5, chance:1, startedAt:0, completesAt:0, gold:0, material:0,
-        influence:1, locked:false, staffCount:2, required:2, incursion:true }, nowMs());
-      const r = state.pendingReports[0];
-      if (!r.success) return "the probe raid did not succeed at chance 1";
-      if (!(z.rival < before))
-        return "answering a raid left the rival at " + round1(z.rival);
-      if (!r.rivalPushed) return "the report does not mention the rival being pushed back";
-      // An ordinary quest must NOT push the rival back.
-      z.rival = before;
-      state.pendingReports = [];
-      resolveQuest({ questId:"probe2", zoneId: z.id, type:"clear", typeName:"Clear",
-        stat:"power", stages:1, name:"Ordinary", length:"short", heroIds:[],
-        ratio:5, chance:1, startedAt:0, completesAt:0, gold:0, material:0,
-        influence:1, locked:false, staffCount:2, required:2 }, nowMs());
-      return z.rival === before
-        ? true : "an ordinary quest changed the rival track";
+      run({});
+      if (z.rival < 0) return "the rival went negative";
+      return true;
     } finally { state = real; }
   });
 
@@ -7367,6 +7438,43 @@ function assertAll(){
     return true;
   });
 
+  chk("a bed exists on ground the recruits themselves come from", () => {
+    // Rob's report: recruits arrive and sit on the roster with nowhere to go.
+    // Two clocks were calibrated against different curves -- a recruit appears
+    // when their OWN zone reaches Honored, but the bed for them wanted material
+    // from zones the player might not have opened at all. Measured before the
+    // fix: the second recruit waited 25 days for a bed because cap 8 asked for
+    // the Ashen Reach's cinderglass.
+    //
+    // The rule: the bed for the Nth recruit may reach ONE zone beyond the
+    // recruits already earned, and no further. Zones and recruits are both
+    // sorted by danger rather than named, so this survives either list changing.
+    const byDanger = CONFIG.ZONES.slice().sort((a, b) => a.danger - b.danger);
+    const dangerOf = {}; CONFIG.ZONES.forEach(z => { dangerOf[z.material] = z.danger; });
+    const gh = CONFIG.BUILDINGS.greatHall;
+    const mats = Object.keys(CONFIG.MATERIALS);
+    // Recruits become available in roughly this order: easiest home zone first.
+    const homes = RECRUITS.map(r => (zoneDef(r.homeZone) || {}).danger || 1)
+      .sort((a, b) => a - b);
+    for (let n = 1; n <= homes.length; n++){
+      const lv = gh.start + n;                     // the bed for the nth recruit
+      if (lv > gh.max)
+        return "the Great Hall cannot house " + homes.length + " recruits at all";
+      const cap = gh.levels[lv].rosterCap;
+      if (cap < CONFIG.ROSTER_START + n)
+        return "Great Hall level " + lv + " caps at " + cap +
+               ", too small for recruit " + n;
+      // One zone beyond what the recruits themselves have opened.
+      const allowed = byDanger[Math.min(byDanger.length - 1, n)].danger;
+      const over = mats.filter(m => (gh.levels[lv][m] || 0) > 0 && dangerOf[m] > allowed);
+      if (over.length)
+        return "the bed for recruit " + n + " (Great Hall " + lv + ") needs " +
+               over.join(", ") + " from danger " + Math.max.apply(null, over.map(m=>dangerOf[m])) +
+               ", beyond the danger " + allowed + " ground that recruit implies";
+    }
+    return true;
+  });
+
   chk("a new player can build something from the ground they can hold", () => {
     // The check that was missing. Every material rule here was about how MANY
     // zones an upgrade needs and none about WHICH, so all six buildings ended up
@@ -7513,6 +7621,13 @@ function assertAll(){
         const t0 = nowMs(), h = state.heroes[0];
         h.status = "idle"; h.deployedTo = null;
         h.fatigue = 100; h.xp = 0;
+        // Own the level too. A hero at LEVEL_MAX banks no XP -- correctly, since
+        // applyLevels() cannot spend it -- so cloning a save whose first hero
+        // had maxed out made this report "the Training Yard grants no XP" as if
+        // the building were broken. It reached a player before it reached the
+        // suite, because the suite only ever ran against rosters that had not
+        // finished growing yet.
+        h.level = 1;
         h.injury = { severity:"serious", healsAt: t0 + 8 * 3600000 };
         state.activeQuests = []; state.pendingReports = [];
         state.lastTick = t0;
@@ -8683,6 +8798,24 @@ function falsify(opts){
       () => { keep.tyG = CONFIG.BUILDINGS.trainingYard.levels[2].grain;
               CONFIG.BUILDINGS.trainingYard.levels[2].grain = 1; },
       () => { CONFIG.BUILDINGS.trainingYard.levels[2].grain = keep.tyG; }],
+    ["a rival nothing can push back below the raid line",
+      "presence pushes the rival back, and a raid pushes it back hardest",
+      () => { keep.rp = CONFIG.RIVAL_PUSH_ON_SUCCESS; CONFIG.RIVAL_PUSH_ON_SUCCESS = 0; },
+      () => { CONFIG.RIVAL_PUSH_ON_SUCCESS = keep.rp; }],
+    ["a Patrol no better at presence than any other job",
+      "presence pushes the rival back, and a raid pushes it back hardest",
+      () => { keep.rpm = CONFIG.RIVAL_PUSH_PATROL_MULT; CONFIG.RIVAL_PUSH_PATROL_MULT = 1; },
+      () => { CONFIG.RIVAL_PUSH_PATROL_MULT = keep.rpm; }],
+    ["presence worth more than answering a raid",
+      "presence pushes the rival back, and a raid pushes it back hardest",
+      () => { keep.rpa = CONFIG.RIVAL_PUSH_PATROL_MULT; CONFIG.RIVAL_PUSH_PATROL_MULT = 50; },
+      () => { CONFIG.RIVAL_PUSH_PATROL_MULT = keep.rpa; }],
+    ["a roster cap the recruits outrun",
+      "a bed exists on ground the recruits themselves come from",
+      () => { keep.ghc = CONFIG.BUILDINGS.greatHall.levels[3].cinderglass;
+              CONFIG.BUILDINGS.greatHall.levels[3].cinderglass = 3; },
+      () => { if (keep.ghc === undefined) delete CONFIG.BUILDINGS.greatHall.levels[3].cinderglass;
+              else CONFIG.BUILDINGS.greatHall.levels[3].cinderglass = keep.ghc; }],
     ["a first building behind the dangerous zones",
       "a new player can build something from the ground they can hold",
       () => { keep.tyHard = CONFIG.BUILDINGS.trainingYard.levels[1].hardstone;
@@ -8899,7 +9032,8 @@ function falsify(opts){
               CONFIG.BUILDINGS.greatHall.levels.forEach(l => { if (l) l.rosterCap = 1; }); },
       () => { CONFIG.BUILDINGS.greatHall.levels.forEach((l, i) => {
                 if (l) l.rosterCap = keep.ghr[i]; }); }],
-    ["a raid the answer never pushes back", "answering a raid pushes the rival back",
+    ["a raid the answer never pushes back",
+      "presence pushes the rival back, and a raid pushes it back hardest",
       () => { keep.ar = CONFIG.INCURSION_ANSWERED_RIVAL; CONFIG.INCURSION_ANSWERED_RIVAL = 0; },
       () => { CONFIG.INCURSION_ANSWERED_RIVAL = keep.ar; }],
     // NOT by zeroing FAIL_INFLUENCE_PENALTY: with no penalty there is no loss to
@@ -9509,6 +9643,17 @@ function sweepPlay(){
         h.marks = [{ id: ids[i % ids.length], zoneId: s.zones[0].id, atMs: 0 }];
       });
     });
+    // The shape that got away: a roster that has FINISHED growing. Every other
+    // shape here has heroes with room left to level, so nothing exercised the
+    // "banks nothing at the ceiling" branch -- and a check that assumed its
+    // subject could still learn reported the Training Yard broken on a real
+    // player's save. A sweep is only worth what its shapes cover.
+    run("a fully trained roster", s => {
+        s.heroes.forEach(h => { h.level = CONFIG.LEVEL_MAX; h.xp = 0;
+          const list = CONFIG.SUBCLASSES[h.cls] || [];
+          if (list[0]) h.subclass = list[0].id; });
+      s.keep.trainingYard = CONFIG.BUILDINGS.trainingYard.max;
+    });
     run("already won", s => {
       s.zones.forEach(z => { z.influence = CONFIG.TIERS[CONFIG.WIN_MIN_TIER].min + 10; });
       s.won = true; s.wonAt = nowMs();
@@ -9572,7 +9717,7 @@ function sweepPlay(){
     helpOpen = wasHelp; reportOpen = wasReport;
     savesDisarmed = wasDisarmed; state = real;
   }
-  return { shapes: 14, failures, ok: failures.length === 0 };
+  return { shapes: 15, failures, ok: failures.length === 0 };
 }
 
 const BK = {
