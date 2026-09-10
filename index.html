@@ -2302,8 +2302,18 @@ function sanitizeLoaded(data){
     if (!z.event || typeof z.event !== "object" || !CONFIG.ZONE_EVENTS[z.event.type])
       z.event = { type:"quiet", expires:0 };
     if (typeof z.event.expires !== "number" || !isFinite(z.event.expires)) z.event.expires = 0;
+    const inf = Number(z.influence);
+    z.influence = isFinite(inf) ? clamp(0, CONFIG.INFLUENCE_MAX, inf) : 0;
     const fl = Number(z.influenceFloor);
     z.influenceFloor = isFinite(fl) ? clamp(0, CONFIG.INFLUENCE_MAX, fl) : 0;
+    // A floor ABOVE the standing it protects is not a floor, it is a lie -- and
+    // the boot suite reports it as a failed assertion, which is what the player
+    // actually sees. No path in play produces it (decay, failure and ignored
+    // raids all clamp to the floor), but retuning CONFIG.TIERS moves where a
+    // Consolidation landed, and this project retunes TIERS constantly. Repaired
+    // DOWNWARD on purpose: the alternative -- lifting influence to meet the
+    // floor -- hands out standing nobody earned.
+    if (z.influenceFloor > z.influence) z.influenceFloor = z.influence;
     // Drop slate entries whose type this build no longer defines, and backfill
     // the Phase 3 fields onto any Clear quest saved before the types existed.
     z.slate = z.slate.filter(q => !!CONFIG.QUEST_TYPES[q.type]);
@@ -5587,12 +5597,24 @@ function narrate(r){
 }
 
 /* ------------------------------------------------------------ render ---- */
+/* A throw anywhere in here used to leave the screen exactly as it was, silently:
+   the action behind it had already happened, so the game state moved and the
+   view did not, and the only symptom was "the screen did not update until I
+   switched tabs". That is indistinguishable from a missing render() call and
+   impossible to diagnose from a bug report. Now it says so, loudly, and names
+   the view that failed -- the same reasoning as the boot suite reporting to the
+   console rather than blocking. */
 function render(){
   if (!state) return;
-  renderHeader();
-  if (currentView === "map") renderMap();
-  else if (currentView === "roster") renderRoster();
-  else renderKeep();
+  try {
+    renderHeader();
+    if (currentView === "map") renderMap();
+    else if (currentView === "roster") renderRoster();
+    else renderKeep();
+  } catch (e){
+    console.error("Banner & Keep — render(" + currentView + ") threw:", e);
+    try { toast("Display error on " + currentView + " — see console"); } catch (e2) {}
+  }
 }
 
 /* Timers update in place so an open deploy drawer never loses its selection. */
@@ -6613,6 +6635,14 @@ function assertAll(){
       // cleared deliberately and the premise is now stated rather than assumed.
       state.activeQuests = [];
       state.heroes.forEach(h => { if (h.status === "deployed") h.status = "idle"; });
+      // Own the floors as well. This check drives influence to a fixed 70 and
+      // then asserts decay still bites -- but a Consolidated floor is clamped UP
+      // to, so a save with a zone locked at Sovereign (floor 80) had its
+      // influence pulled to 80 by the very decay pass under test, and the check
+      // reported "decay stopped after the win". Reachable by any player holding
+      // a Charter above 70. Consolidation has its own checks; this one is about
+      // decay.
+      state.zones.forEach(z => { z.influenceFloor = 0; });
       // §10: four zones at Honored or above AT THE SAME TIME.
       if (CONFIG.WIN_ZONE_COUNT !== 4)
         return "§10 requires four zones; CONFIG says " + CONFIG.WIN_ZONE_COUNT;
@@ -8201,11 +8231,20 @@ function assertAll(){
           hurt++;
       }
       const observed = hurt / N;
-      // ~1500 samples: 4 points of slack is comfortably outside sampling noise
-      // but tight enough to catch the 2-3x errors this check exists to find.
-      return Math.abs(observed - predicted) < 0.04
+      // Tolerance DERIVED from the sample size, not picked. A flat 4 points was
+      // fine at 1,500 samples and became a ~3% flake when the wounded cases were
+      // cut to 600 for speed -- and a flake in a boot check is not intermittent
+      // for a player, it is permanent for whichever save happens to land in the
+      // tail. 3.2 sigma, floored at 4 points so a near-certain outcome still has
+      // room, and still far tighter than the 2-3x errors this check exists to
+      // find. Halving N now widens the band automatically instead of silently
+      // arming a false alarm.
+      const sigma = Math.sqrt(Math.max(predicted * (1 - predicted), 0.01) / N);
+      const tol = Math.max(0.04, 3.2 * sigma);
+      return Math.abs(observed - predicted) < tol
         ? true : "the drawer promises " + pct(predicted) +
-                 " but resolution produced " + pct(observed) + " over " + N + " runs";
+                 " but resolution produced " + pct(observed) + " over " + N +
+                 " runs (tolerance " + pct(tol) + ")";
       });
     } finally { savesDisarmed = wasDisarmed; state = real; }
   }
@@ -8685,16 +8724,32 @@ function assertAll(){
                    * hunterCounterMult(hunt, party);
     if (Math.abs(pv.power - expected) > 1e-9)
       return "odds say " + round1(pv.power) + " but the rows total " + round1(expected);
-    const flat = party.reduce((n, h) => n + heroStat(h, "power"), 0);
-    if (!(rows > flat))
-      return "Fen-Wise appears on the row but never reaches the odds in Marrowfen";
+    // Isolate the trait: the SAME hero, in the SAME zone, with and without
+    // fenWise. The old version compared a PARTY SUM in Marrowfen against the
+    // same sum with no zone at all and credited the entire difference to
+    // Fen-Wise -- so every other zone-conditional effect in the party landed on
+    // the scales too. Measured failure: Wren grievously wounded (which shrinks
+    // her +20% to a fraction of a point) beside an Aldric carrying a Mark taken
+    // in another zone (a flat -10% on a much larger number). Sum went DOWN, the
+    // check announced Fen-Wise dead, and the trait was working perfectly the
+    // whole time. It reached a player at level 5.
+    const withTrait = heroStat(fen, "power", ctx);
+    const keptTraits = fen.traits;
+    let withoutTrait, graceWith, graceWithout;
+    try {
+      graceWith = heroStat(fen, "grace", ctx);
+      fen.traits = keptTraits.filter(t => t !== "fenWise");
+      withoutTrait = heroStat(fen, "power", ctx);
+      graceWithout = heroStat(fen, "grace", ctx);
+    } finally { fen.traits = keptTraits; }
+    if (!(withTrait > withoutTrait))
+      return "Fen-Wise does not reach the odds in Marrowfen (" +
+             round1(withoutTrait) + " with it, " + round1(withTrait) + " without)";
 
-    // A quest that tests a non-physical stat must read the same in and out of
-    // the zone: Fen-Wise sharpens arms, not conversation.
+    // And it must sharpen arms, not conversation. Same isolation: a party sum
+    // could hide a leak behind somebody else's Grace.
     const court = mk("court", "grace");
-    const inZone  = party.reduce((n, h) => n + heroStat(h, "grace", ctx), 0);
-    const outZone = party.reduce((n, h) => n + heroStat(h, "grace"), 0);
-    return Math.abs(inZone - outZone) < 1e-9 && previewQuest(court, party).stat === "grace"
+    return Math.abs(graceWith - graceWithout) < 1e-9 && previewQuest(court, party).stat === "grace"
       ? true : "a power trait is leaking into a Grace test";
   });
 
@@ -9063,9 +9118,16 @@ function falsify(opts){
     ["Muster that musters nobody", "zone events reach the formulas they claim to",
       () => { keep.mw = CONFIG.ZONE_EVENTS.muster.warfrontReq; CONFIG.ZONE_EVENTS.muster.warfrontReq = 0; },
       () => { CONFIG.ZONE_EVENTS.muster.warfrontReq = keep.mw; }],
-    ["events that never expire", "events rotate and never leave a zone without one",
+    // An event that cannot HOLD, not one that never ends. The old probe gave
+    // Quiet a million-hour duration, which only caught the check out when Quiet
+    // happened to be rolled before the other three had been seen -- so it
+    // depended on where the live save's RNG happened to be, and quietly stopped
+    // catching anything when it was not. A zero-length event expires the instant
+    // it is rolled and can never be the live one, which fails the check every
+    // time and for the right reason.
+    ["an event that cannot hold", "events rotate and never leave a zone without one",
       () => { keep.qm = CONFIG.ZONE_EVENTS.quiet.maxH; keep.qn = CONFIG.ZONE_EVENTS.quiet.minH;
-              CONFIG.ZONE_EVENTS.quiet.minH = 1e6; CONFIG.ZONE_EVENTS.quiet.maxH = 1e6; },
+              CONFIG.ZONE_EVENTS.quiet.minH = 0; CONFIG.ZONE_EVENTS.quiet.maxH = 0; },
       () => { CONFIG.ZONE_EVENTS.quiet.minH = keep.qn; CONFIG.ZONE_EVENTS.quiet.maxH = keep.qm; }],
     ["a raid threshold nobody reaches", "a raid appears at the threshold and costs something if ignored",
       () => { keep.ir = CONFIG.INCURSION_RIVAL_MIN; CONFIG.INCURSION_RIVAL_MIN = 999; },
@@ -9720,10 +9782,101 @@ function sweepPlay(){
   return { shapes: 15, failures, ok: failures.length === 0 };
 }
 
+/* ------------------------------------------------------- fuzzStates -----
+   sweepKeep() sweeps buildings, sweepPlay() sweeps a dozen hand-written play
+   shapes. Both are lists somebody thought of. This generates RANDOM but LEGAL
+   saves and runs the whole suite against each, and it found three defects the
+   hand-written shapes had missed -- every one of them a check that clones the
+   live save and quietly assumes something about it:
+
+     - the Fen-Wise check credited a whole party's zone delta to one trait, so a
+       wounded Wren beside a Marked Aldric read as the trait being dead
+     - the victory check drove influence to 70 without owning the Consolidated
+       floor, which is clamped UP to, so decay appeared to stop
+     - the injury reconciliation kept a flat tolerance after its sample size was
+       cut, turning a 3% flake into a permanent failure for whichever save
+       landed in the tail
+
+   Legal is the whole point: the floor is set the way consolidate() sets it, not
+   independently, or the run just reports states the game cannot reach. Seeded,
+   so a failure is reproducible by seed.
+   ------------------------------------------------------------------------ */
+function fuzzStates(count, from){
+  const real = state, off = savesDisarmed;
+  savesDisarmed = true;
+  const n = count || 40, start = from || 1;
+  const failures = [];
+  try {
+    for (let i = 0; i < n; i++){
+      const seed = start + i;
+      withSeed(seed, () => {
+        state = JSON.parse(JSON.stringify(real));
+        const s = state, R = k => Math.floor(rand() * k);
+        s.zones.forEach(z => {
+          z.influence = R(CONFIG.INFLUENCE_MAX + 1);
+          z.rival = R(CONFIG.RIVAL_MAX + 1);
+          z.influenceFloor = rand() < 0.35
+            ? CONFIG.TIERS[tierIndexFor(z.influence)].min : 0;
+          z.intelUntil = rand() < 0.3 ? nowMs() + R(3600000) : 0;
+        });
+        Object.keys(CONFIG.BUILDINGS).forEach(id => {
+          const b = CONFIG.BUILDINGS[id];
+          s.keep[id] = b.start + R(b.max - b.start + 1);
+        });
+        s.gold = R(50000); s.charters = R(6);
+        Object.keys(s.materials).forEach(m => { s.materials[m] = R(300); });
+        const markIds = Object.keys(MARKS);
+        s.heroes.forEach(h => {
+          h.level = 1;
+          h.xp = rand() < 0.5 ? 0 : xpToReach(1 + R(CONFIG.LEVEL_MAX));
+          applyLevels(h);
+          if (h.level >= CONFIG.SUBCLASS_LEVEL && rand() < 0.6){
+            const l = CONFIG.SUBCLASSES[h.cls] || [];
+            if (l.length) h.subclass = l[R(l.length)].id;
+          }
+          h.fatigue = R(CONFIG.FATIGUE_MAX + 1);
+          if (rand() < 0.4){
+            const sev = CONFIG.INJURY_SEVERITIES[R(CONFIG.INJURY_SEVERITIES.length)];
+            h.injury = { severity: sev.id, healsAt: nowMs() + R(9e7) };
+          }
+          h.marks = rand() < 0.45
+            ? [{ id: markIds[R(markIds.length)], zoneId: s.zones[R(s.zones.length)].id, atMs: 0 }]
+            : [];
+          h.gear = {};
+          CONFIG.GEAR_SLOTS.forEach(sl => {
+            if (rand() < 0.5){
+              const t = 1 + R(CONFIG.GEAR_TIER_MAX);
+              h.gear[sl] = { id: GEAR[sl][t][R(GEAR[sl][t].length)].id, tier: t };
+            } else h.gear[sl] = null;
+          });
+        });
+        s.stash = [];
+        const items = R(12);
+        for (let k = 0; k < items; k++){
+          const sl = CONFIG.GEAR_SLOTS[R(CONFIG.GEAR_SLOTS.length)], t = 1 + R(CONFIG.GEAR_TIER_MAX);
+          s.stash.push({ id: GEAR[sl][t][R(GEAR[sl][t].length)].id, tier: t });
+        }
+        s.won = rand() < 0.2;
+        if (s.won){ s.wonAt = nowMs(); s.wonWith = s.heroes.map(h => h.name); }
+        s.zones.forEach(z => { z.slate = []; reseedSlate(z, nowMs(), true); });
+        if (rand() < 0.6) s.zones.forEach(z => {
+          const q = z.slate[0];
+          const pool = s.heroes.filter(h => h.status === "idle");
+          if (q && pool.length >= q.required && rand() < 0.5) deploy(q, pool.slice(0, q.required));
+        });
+        const r = assertAll();
+        if (!r.pass) failures.push({ seed: seed, fails: r.fails });
+      });
+    }
+  } finally { savesDisarmed = off; state = real; }
+  return { runs: n, from: start, failures, ok: failures.length === 0 };
+}
+
 const BK = {
   get state(){ return state; },
   sweepKeep,
   sweepPlay,
+  fuzzStates,
   // Registries are exported and mutable on purpose: falsifying an assertion
   // means breaking the thing it names from the console in one call.
   CONFIG, CLEAR_QUESTS, TRAITS, MARKS, STARTING_HEROES, QUEST_POOLS, DERIVED,
