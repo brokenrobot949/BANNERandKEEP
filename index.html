@@ -207,6 +207,9 @@ button{font-family:var(--sans)}
 /* A party on the map. The outer ring breathes only while they are at the
    region doing the work -- on the road they are simply moving -- and not at
    all for anyone who has asked the system for less motion. */
+/* Decorative: a marker parked by a region, or fanned across a busy road, must
+   never swallow a tap meant for the region beneath it. */
+#map-svg .party{pointer-events:none}
 #map-svg .party .pring{opacity:0}
 #map-svg .party.onsite .pring{animation:partywork 2.4s ease-in-out infinite}
 @keyframes partywork{0%,100%{opacity:.15;transform:scale(.9)}50%{opacity:.7;transform:scale(1.15)}}
@@ -899,8 +902,16 @@ const CONFIG = {
      almost everything at the 95% cap. Three changes, tuned together against
      staffingGate() for the feel and a whole-game simulation for the pace:
 
-       - every perHero x0.9, so the asked-for party is a solid choice (~65-80%
-         at a fair match, Delve ~45-55% to clear every stage);
+       - every ORDINARY slate type's perHero x0.9 (Warfront and Delve further,
+         both were poor at any count), so the asked-for party is a solid
+         choice (~65-80% at a fair match, Delve ~45-55% to clear every stage).
+         The two campaigns were handled separately and measured, not swept
+         along: Reclaim kept 20 and came out 6-16 points easier from the danger
+         curve alone -- still a bloodbath in the Reach at 55% for a level-20
+         roster -- and the Crown went 27 -> 20, from 33-46% to 48-66% across
+         levels 10-20. "the campaigns are desperate, never hopeless" holds both;
+         the first draft of this comment claimed every type got x0.9, and the
+         audit was right that it did not;
        - QUEST_DANGER_SCALE 0.45 -> 0.28, because the asked-for party fell away
          as danger rose even at a fair level -- the level curve did not keep
          pace with the danger curve. Not lower: at 0.24 the Crown Road capped
@@ -1089,7 +1100,8 @@ const CONFIG = {
   // Breathing room between writs. 8 until the stock writs were re-sized: the
   // old pacing leaned on writs nobody could pay, and once those were payable
   // engaged play finished in ~7 days. At 12 each writ is an event, and 3-6
-  // check-ins a day settle the weighing in 10-12.5 days, as Phase 10 intended.
+  // check-ins a day settle the weighing in ~9-11 days (re-measured after the
+  // Levy was capped to the roster -- impossible Levies had been lapsing too).
   WRIT_GAP_H: 12,
   /* Anti-frustration, and the same shape as OFFLINE_DECAY_CAP_H. A writ's
      clock is stored as time REMAINING and is advanced only by the capped
@@ -1152,8 +1164,15 @@ const CONFIG = {
       demand:"warfront" },
     assize:  { name:"Assize",  favourMult:1.30, deadlineH:36,
       demand:"hold",     holdTier:4, holdH:10 },
+    /* maxShare caps a Levy at that share of the ROSTER, never fewer than one.
+       Without it the Levy grew exactly the way the Account writ did -- 2 plus
+       a third of a hero per writ met -- so the fifteenth asked for 7 heroes:
+       unanswerable with six, and seven of ten gone for sixteen hours with ten.
+       Found by loading a realistic late save into the fixed build; the audit
+       and the writ-by-kind re-measure both missed it, because both only looked
+       at the stock writs. 0.4 of ten is four away: a real loss, not a halt. */
     levy:    { name:"Levy",    favourMult:1.45, deadlineH:48,
-      demand:"heroes",   base:2,    ramp:0.34, serviceH:16 }
+      demand:"heroes",   base:2,    ramp:0.34, serviceH:16, maxShare:0.4 }
   },
 
   /* traits ---------------------------------------------------------------
@@ -2842,9 +2861,13 @@ function sanitizeLoaded(data){
     // Drop slate entries whose type this build no longer defines, and backfill
     // the Phase 3 fields onto any Clear quest saved before the types existed.
     z.slate = z.slate.filter(q => !!CONFIG.QUEST_TYPES[q.type]);
+    const zdef = zoneDef(z.id);
     z.slate.forEach(q => {
       if (!q.stat) q.stat = CONFIG.QUEST_TYPES[q.type].stat;
       if (!q.stages) q.stages = CONFIG.QUEST_TYPES[q.type].stages || 1;
+      // Scored by today's rules. See slateDifficulty().
+      const req = Number(q.required);
+      if (zdef && isFinite(req) && req > 0) q.difficulty = slateDifficulty(q, zdef.danger);
     });
   });
   (data.activeQuests || []).forEach(q => {
@@ -2944,6 +2967,12 @@ function sanitizeLoaded(data){
        player must never open the tab to find a standing writ has got harder. */
     if (H.writ && def.days !== undefined)
       w.amount = Math.min(w.amount || Infinity, writAmount(w.kind, w.material, H.met));
+    // A Levy not yet answered gets the same treatment against the roster this
+    // save actually has. One already SERVED is left alone -- its heroes are at
+    // Highcrown now and the writ is keeping its word to them.
+    if (H.writ && def.demand === "heroes" && !w.servedUntil)
+      w.amount = Math.min(w.amount || Infinity,
+        writAmount(w.kind, null, H.met, (data.heroes || []).length));
   } else H.writ = null;
   /* A save that had already won before the endgame existed. §10 makes holding
      four zones the thing that unlocks Highcrown, so a player who has done it
@@ -3166,7 +3195,7 @@ function makeIncursion(zoneState, t){
   q.name = src.name;
   q.flavor = src.flavor;
   q.required = required;
-  q.difficulty = questDifficulty("clear", required, zd.danger) * CONFIG.INCURSION_DIFFICULTY_MULT;
+  q.difficulty = slateDifficulty(q, zd.danger);
   q.gold = Math.round(q.gold * CONFIG.INCURSION_REWARD_MULT);
   q.material = Math.round(q.material * CONFIG.INCURSION_REWARD_MULT);
   q.expiresAt = t + CONFIG.INCURSION_EXPIRY_MS;
@@ -3953,6 +3982,21 @@ function bestParty(q, n){
 /* What the slate card shows: the odds as asked with who is free, and what one
    more would buy. A Delve is quoted on clearing every stage, since that is what
    "success" means in the report the player will read. */
+/* The one hero who would help most if added to `party`, judged by the odds they
+   actually produce -- not by raw stat, which misses a Hunt's counter and the
+   role an extra brings. The slate card and the send panel BOTH ask this, so
+   they cannot name different people for the same question; before this, the
+   card considered the counter and the panel sorted by stat, and on a Hunt the
+   two could disagree. (Found by the post-rebalance audit.) */
+function bestAddition(q, party){
+  let best = null, bestChance = -1;
+  state.heroes.forEach(h => {
+    if (!isAvailable(h) || h.injury.severity || party.indexOf(h) >= 0) return;
+    const c = previewQuest(q, party.concat([h])).chance;
+    if (c > bestChance + 1e-12){ best = h; bestChance = c; }
+  });
+  return best;
+}
 function bestOdds(q){
   const asked = bestParty(q, q.required);
   if (!asked.free) return null;
@@ -3960,7 +4004,8 @@ function bestOdds(q){
   const all = pv => Math.pow(pv.chance, stages);
   const now = previewQuest(q, asked.party);
   let more = null;
-  if (asked.free > q.required) more = all(previewQuest(q, bestParty(q, q.required + 1).party));
+  const add = asked.free > q.required ? bestAddition(q, asked.party) : null;
+  if (add) more = all(previewQuest(q, asked.party.concat([add])));
   return { free: asked.free, short: Math.max(0, q.required - asked.free),
            chance: all(now), more: more, stages: stages };
 }
@@ -4034,6 +4079,17 @@ function previewQuest(quest, heroes){
 function questDifficulty(typeId, required, danger){
   const t = CONFIG.QUEST_TYPES[typeId];
   return t.perHero * required * (1 + (danger - 1) * CONFIG.QUEST_DANGER_SCALE);
+}
+/* What a quest ON A SLATE is scored against. One function, used where quests
+   are made AND where a save is loaded, because a slate quest stores its
+   difficulty -- and a save written before a rebalance kept the old number on
+   every job still on the board, scored by the new party formula against the
+   old, harsher difficulty until each one expired. (Found by the post-rebalance
+   audit.) In-flight quests are deliberately left alone: their odds were frozen
+   when they were sent, and the drawer's promise is kept. */
+function slateDifficulty(q, danger){
+  const base = questDifficulty(q.type, q.required, danger);
+  return q.incursion ? base * CONFIG.INCURSION_DIFFICULTY_MULT : base;
 }
 function slateSize(zoneState){
   const t = tierIndexFor(zoneState.influence);
@@ -4198,7 +4254,6 @@ function reseedSlate(zoneState, t, force){
     if (c){ c.expiresAt = t + CONFIG.CROWN_EXPIRY_MS; zoneState.slate.push(c); }
   }
   zoneState.nextReseed = t + CONFIG.SLATE_RESEED_MS;
-  if (force) zoneState.nextReseed = t + CONFIG.SLATE_RESEED_MS;
 }
 
 /* ============================================================= DEPLOY ===== */
@@ -4815,9 +4870,29 @@ const writKindDef = k => CONFIG.WRIT_KINDS[k] || CONFIG.WRIT_KINDS.account;
    MET rather than by anything the player owns: scaling a demand to the
    player's stockpile punishes exactly the preparation the game asks for, and
    turns saving up into a treadmill. */
-function writAmount(kind, material, met){
+/* The most writs any endgame can answer before Favour fills: set by the
+   smallest Favour a writ pays. Every "late in the endgame" rule is checked at
+   this far end, because that end is where both writ bugs lived. */
+function maxWritsMet(){
+  const minMult = Math.min.apply(null, Object.keys(CONFIG.WRIT_KINDS)
+    .map(k => CONFIG.WRIT_KINDS[k].favourMult));
+  const n = Math.ceil(CONFIG.FAVOUR_MAX / (CONFIG.FAVOUR_PER_WRIT * minMult));
+  /* Always finite, because checks LOOP to it. A writ paying no Favour makes
+     this 100 / 0 -- Infinity -- and the Levy check spun forever inside the
+     boot suite, which hangs the page on load. Found by the falsification
+     probe that zeroes FAVOUR_PER_WRIT; another check already reports that a
+     writ earns nothing, so a ceiling here hides no fault. */
+  return isFinite(n) && n > 0 ? Math.min(n, 200) : 200;
+}
+function writAmount(kind, material, met, rosterSize){
   const d = writKindDef(kind);
   const m = met === undefined ? hc().met : met;
+  // A Levy is sized against the roster it takes from. See maxShare.
+  if (d.demand === "heroes"){
+    const roster = rosterSize !== undefined ? rosterSize : (state ? state.heroes.length : Infinity);
+    const cap = Math.max(1, Math.floor(roster * d.maxShare));
+    return Math.max(1, Math.min(cap, Math.round(d.base + d.ramp * m)));
+  }
   // Stock writs: days of what a Keep can spare, for this particular currency.
   if (d.days !== undefined){
     const ref = d.demand === "gold" ? CONFIG.WRIT_REF_INCOME.gold
@@ -5977,14 +6052,16 @@ function renderDrawer(q){
        made real is "is insurance worth a hero today?", and it cannot be made
        without seeing the price of the insurance next to the odds it buys. */
     if (pv.chance < CONFIG.SUCCESS_MAX){
-      const more = state.heroes.filter(x => isAvailable(x) && !x.injury.severity &&
-                                            chosen.indexOf(x) < 0)
-        .sort((a, b) => heroStat(b, statId, ctx) - heroStat(a, statId, ctx))[0];
+      const more = bestAddition(q, chosen);
       if (more){
         const pm = previewQuest(q, chosen.concat([more]));
+        // A Delve is quoted on clearing every stage, as the slate card quotes it,
+        // so the two screens show the same number for the same party.
+        const st = pv.stages || 1;
         if (pm.chance > pv.chance + 0.005)
-          h += '<div class="tiny dim onemore" style="margin-bottom:7px">With ' + more.name +
-            ' as well: <b>' + pct(pm.chance) + '</b> success, hurt risk ' +
+          h += '<div class="tiny dim onemore" style="margin-bottom:7px" data-more="' + more.id +
+            '">With ' + more.name + ' as well: <b>' + pct(Math.pow(pm.chance, st)) + '</b> ' +
+            (st > 1 ? 'to clear every stage' : 'success') + ', hurt risk ' +
             pct(pm.expectedHurt) + '.</div>';
       }
     }
@@ -7425,7 +7502,9 @@ function showReport(){
     // its own line rather than a chip lost among the coin.
     if ((r.levelled || []).length)
       h += '<div class="levelup">' + icon("sym-sword", 11, "var(--t4)") + ' ' +
-        nameList(r.levelled.map(s => s.replace(" to ", " reached level "))) + '.' +
+        // Anchored to the level at the END: replacing the first " to " would
+        // mangle any hero whose own name contains the word.
+        nameList(r.levelled.map(s => s.replace(/ to (\d+)$/, " reached level $1"))) + '.' +
         (r.branchReady ? ' <b>A branch is waiting on the roster.</b>' : '') + '</div>';
     h += '</div>';
   });
@@ -9244,6 +9323,36 @@ function assertAll(){
     return true;
   });
 
+  chk("a Levy never asks for more of the roster than it can spare", () => {
+    /* Every roster size the Great Hall allows, at every point of the longest
+       endgame. The rule is the player's: a Levy must be answerable, and must
+       leave the Keep more than half its people -- the writ takes heroes away,
+       it does not stop the game. It grew like the Account writ once, to seven
+       of a six-hero roster, and nothing checked the far end. */
+    const gh = CONFIG.BUILDINGS.greatHall;
+    const sizes = [];
+    for (let lv = gh.start; lv <= gh.max; lv++) sizes.push(gh.levels[lv].rosterCap);
+    const top = maxWritsMet();
+    for (const n of sizes)
+      for (let met = 0; met <= top; met++){
+        const ask = writAmount("levy", null, met, n);
+        if (ask < 1) return "a Levy asked for nobody at " + met + " writs met";
+        if (ask > n) return "a Levy asked for " + ask + " of a " + n + "-hero roster";
+        if (ask > n / 2) return "a Levy takes " + ask + " of " + n + " heroes -- more than half the Keep";
+      }
+    // A standing, unanswered Levy from an older rule shrinks on load; one
+    // already served keeps its word to the heroes who went.
+    const mk = served => sanitizeLoaded(migrate({ version: 2, zones: [], won: true,
+      heroes: STARTING_HEROES.slice(0, 6).map(d => ({ name: d.name, cls: d.cls, status: "idle" })),
+      highcrown: { open: true, met: top, writ: { kind: "levy", amount: 7, remainingMs: 3600000,
+        issuedAt: 1, servedUntil: served ? 9e12 : 0, heroIds: [] } } }));
+    const fresh = mk(false).highcrown.writ;
+    if (!fresh || fresh.amount > 3) return "an unanswered 7-hero Levy on a 6-hero save was not re-sized";
+    const kept = mk(true).highcrown.writ;
+    if (!kept || kept.amount !== 7) return "loading re-sized a Levy whose heroes had already gone";
+    return true;
+  });
+
   chk("a writ takes exactly what it asks for, and only when it can be paid", () => {
     const real = state;
     try {
@@ -10845,9 +10954,18 @@ function assertAll(){
       if (b.fatigue !== 60) return "a deployed hero recovered fatigue in the field";
       const aLeft = a.injury.severity ? a.injury.healsAt - (t + 4 * 3600000) : 0;
       const bLeft = b.injury.healsAt - (t + 4 * 3600000);
-      if (!(bLeft > aLeft + 3599000))
-        return "a wound healed in the field: resting had " + Math.round(aLeft / 3600000) +
-               "h left, deployed had " + Math.round(bLeft / 3600000) + "h";
+      /* The rule, stated exactly: in the field the wound's clock does not move
+         AT ALL. This used to compare the two heroes and pass if the deployed
+         one had an hour more left -- which an Infirmary made true on its own,
+         since it heals the RESTING hero faster. On a Keep with one, a wound
+         healing at full speed in the field still passed, and the probe that
+         turns field healing on went undetected. Found by running the sweep
+         against a realistic late save rather than a fresh one. */
+      if (Math.abs(bLeft - heal) > 60000)
+        return "a wound's clock moved in the field: " + Math.round((heal - bLeft) / 60000) +
+               " minutes healed while deployed";
+      if (!(aLeft <= heal - 4 * 3600000 + 60000))
+        return "a resting hero's wound did not progress: " + Math.round(aLeft / 3600000) + "h left";
       return true;
     } finally { state = real; }
   });
@@ -11329,12 +11447,46 @@ function assertAll(){
           seen++;
         }
       }
-      return seen ? true : "no slate to test";
-    } finally { state = real; }
+      if (!seen) return "no slate to test";
+
+      /* And on SCREEN: open a job with the card's own party picked, and the send
+         panel must name the same extra hero at the same figure the card
+         quoted. The two used to choose "one more" differently -- by odds on the
+         card, by raw stat in the panel -- and on a Hunt could disagree. */
+      const zs = openZones()[0];
+      const q = zs.slate.filter(x => bestOdds(x) && bestOdds(x).more !== null)[0];
+      if (q){
+        const o = bestOdds(q), bp = bestParty(q, q.required);
+        const add = bestAddition(q, bp.party);
+        const realView = currentView, realZone = openZone, realSel = selectedQuest, realPick = picked;
+        try {
+          currentView = "map"; openZone = zs.id; selectedQuest = q.id;
+          picked = new Set(bp.party.map(h => h.id));
+          render();
+          const line = document.querySelector("#v-map .onemore[data-more]");
+          if (o.more > o.chance + 0.005){
+            if (!line) return "the send panel offers no 'one more' where the card does";
+            if (line.dataset.more !== add.id) return "the card and the send panel name different extra heroes";
+            const shown = (line.querySelector("b") || {}).textContent;
+            if (shown !== pct(o.more))
+              return "the card says " + pct(o.more) + " with one more, the send panel " + shown;
+          }
+        } finally {
+          currentView = realView; openZone = realZone; selectedQuest = realSel; picked = realPick;
+        }
+      }
+      return true;
+    } finally { state = real; render(); }
   });
 
   chk("every party in the field is on its road, and goes out and comes home", () => {
     const real = state, realView = currentView, realZone = openZone;
+    // deploy() calls save(). The debounce and the synchronous restore below
+    // happen to make that harmless today, which is timing, not a guarantee --
+    // and this project has had a check write its fixture into the real save
+    // once already. Disarmed like every other check that deploys.
+    const wasDisarmed = savesDisarmed;
+    savesDisarmed = true;
     try {
       state = JSON.parse(JSON.stringify(real));
       state.activeQuests = [];
@@ -11363,8 +11515,16 @@ function assertAll(){
       if (!n) return "a party in the field is not on the map";
       if (document.querySelectorAll("#map-svg .party").length !== state.activeQuests.length)
         return "the map shows a different number of parties than are out";
+      // Decorative means it must never swallow a tap meant for the region
+      // underneath -- the same rule the moment banner follows.
+      if (getComputedStyle(n).pointerEvents !== "none")
+        return "a party marker can intercept a tap meant for the map";
       return true;
-    } finally { state = real; currentView = realView; openZone = realZone; render(); }
+    } finally {
+      state = real; currentView = realView; openZone = realZone;
+      savesDisarmed = wasDisarmed;
+      render();
+    }
   });
 
   chk("a portrait shows what has happened to the person", () => {
@@ -11440,6 +11600,54 @@ function assertAll(){
       highcrown: { open:true, met: 14, writ: { kind:"account", amount: 10,
         remainingMs: 3600000, issuedAt: 1 } } }));
     return tiny.highcrown.writ.amount === 10 ? true : "loading made a standing writ harder";
+  });
+
+  chk("the campaigns are desperate, never hopeless, and levels still pay", () => {
+    /* Reclaim and the Crown campaign are weight 0 -- never on an ordinary
+       slate -- so the staffing gate cannot see them, and the rebalance moved
+       both. The design's claims, as bounds: the last campaign is hard but
+       winnable where it is actually fought, and reaching level 20 still buys
+       real odds on it; a Reclaim on the hardest ground stays a bloodbath even
+       at the ceiling, and on the gentlest it is never a lost cause. */
+    const crown = CONFIG.QUEST_TYPES.crown;
+    const road = (crown.zones || [])[0];
+    if (!road) return "the Crown campaign names no region";
+    const roadDanger = zoneDef(road).danger;
+    const at = L => campaignOdds("crown", road, L, 20);
+    const work = at(WORK_LEVEL[roadDanger] || 14);
+    if (work === null) return "no Crown campaign could be made";
+    if (work < 0.40) return "the last campaign is " + pct(work) + " where it is fought -- not winnable";
+    if (work > 0.75) return "the last campaign is " + pct(work) + " where it is fought -- not a climax";
+    if (at(CONFIG.LEVEL_MAX) - at(CONFIG.SUBCLASS_LEVEL) < 0.10)
+      return "levels 10 to 20 buy almost nothing on the last campaign";
+    const lock = CONFIG.RIVAL_LOCK_AT + 8;
+    const byDanger = CONFIG.ZONES.slice().sort((a, b) => a.danger - b.danger);
+    const hardest = campaignOdds("reclaim", byDanger[byDanger.length - 1].id, CONFIG.LEVEL_MAX, lock);
+    const gentlest = campaignOdds("reclaim", byDanger[0].id, 1, lock);
+    if (hardest > 0.75)
+      return "retaking the hardest ground is " + pct(hardest) + " at the level ceiling -- no longer desperate";
+    if (gentlest < 0.25)
+      return "retaking the gentlest ground is " + pct(gentlest) + " for a new Keep -- hopeless";
+    return true;
+  });
+
+  chk("a job already on the board is scored by today's rules after loading", () => {
+    // A slate quest stores its difficulty. A save written before a rebalance
+    // kept the old number on every job still on the board.
+    const zs = CONFIG.ZONES[CONFIG.ZONES.length - 1];
+    const d = sanitizeLoaded(migrate({ version: 2, heroes: [], zones: [{ id: zs.id,
+      influence: 40, rival: 0, slate: [
+        { id:"q1", zoneId: zs.id, type:"clear", required:2, difficulty: 999, expiresAt: 9e12 },
+        { id:"q2", zoneId: zs.id, type:"clear", required:3, difficulty: 999, expiresAt: 9e12,
+          incursion: true } ] }] }));
+    const slate = d.zones.filter(z => z.id === zs.id)[0].slate;
+    const plain = slate.filter(q => !q.incursion)[0], raid = slate.filter(q => q.incursion)[0];
+    if (Math.abs(plain.difficulty - questDifficulty("clear", 2, zs.danger)) > 1e-9)
+      return "a job on the board kept a difficulty of " + plain.difficulty + " after loading";
+    if (Math.abs(raid.difficulty - questDifficulty("clear", 3, zs.danger) *
+                 CONFIG.INCURSION_DIFFICULTY_MULT) > 1e-9)
+      return "a raid on the board lost its own difficulty on loading";
+    return true;
   });
 
   chk("an extra hero adds a share of their strength, not all of it", () => {
@@ -12096,9 +12304,14 @@ function falsify(opts){
       () => { keep.fl = CONFIG.BUILDINGS.infirmary.levels[1].bogiron;
               delete CONFIG.BUILDINGS.infirmary.levels[1].bogiron; },
       () => { CONFIG.BUILDINGS.infirmary.levels[1].bogiron = keep.fl; }],
-    ["a stash cap the loader ignores", "a save written before gear existed loads clean",
-      () => { keep.gs = CONFIG.GEAR_STASH_MAX; CONFIG.GEAR_STASH_MAX = 1e9; },
-      () => { CONFIG.GEAR_STASH_MAX = keep.gs; }],
+    /* There was a probe here raising GEAR_STASH_MAX to 1e9, named "a stash cap
+       the loader ignores". It never tested the loader: the check builds its
+       overfull stash FROM the cap, so the fixture grew with it and the check
+       only failed when pushing a billion items blew the array up -- after
+       twenty-odd seconds, long enough to kill any sweep chunk it sat in. A
+       probe that catches by crashing proves nothing. The cap clause has no
+       honest runtime lever (fixture and loader read one constant, as they
+       must); the check stays covered by the gear-slot probe below. */
     ["a gear slot the loader does not know about",
       "a save written before gear existed loads clean",
       () => { keep.gsl = CONFIG.GEAR_SLOTS.slice(); CONFIG.GEAR_SLOTS.push("boots"); },
@@ -12602,6 +12815,48 @@ function falsify(opts){
                 const raw = vals.reduce((n, v, i) => n + (i < required ? v : v * share), 0);
                 return raw * roleCoverage(heroes) * staffing(heroes.length, required).powerMult; }; },
       () => { partyPower = keep.pp; }],
+    ["a Levy that can take most of the Keep",
+      "a Levy never asks for more of the roster than it can spare",
+      () => { keep.lms = CONFIG.WRIT_KINDS.levy.maxShare; CONFIG.WRIT_KINDS.levy.maxShare = 2; },
+      () => { CONFIG.WRIT_KINDS.levy.maxShare = keep.lms; }],
+    ["a loader that keeps an unanswerable Levy",
+      "a Levy never asks for more of the roster than it can spare",
+      () => { keep.sl4 = sanitizeLoaded;
+              sanitizeLoaded = function(d){
+                const was = d.highcrown && d.highcrown.writ ? d.highcrown.writ.amount : null;
+                const r = keep.sl4(d);
+                if (r.highcrown && r.highcrown.writ && was !== null) r.highcrown.writ.amount = was;
+                return r; }; },
+      () => { sanitizeLoaded = keep.sl4; }],
+    ["the last campaign back at its old, near-hopeless difficulty",
+      "the campaigns are desperate, never hopeless, and levels still pay",
+      () => { keep.cph = CONFIG.QUEST_TYPES.crown.perHero; CONFIG.QUEST_TYPES.crown.perHero = 27; },
+      () => { CONFIG.QUEST_TYPES.crown.perHero = keep.cph; }],
+    ["a Reclaim that is no longer desperate",
+      "the campaigns are desperate, never hopeless, and levels still pay",
+      () => { keep.rph = CONFIG.QUEST_TYPES.reclaim.perHero; CONFIG.QUEST_TYPES.reclaim.perHero *= 0.5; },
+      () => { CONFIG.QUEST_TYPES.reclaim.perHero = keep.rph; }],
+    ["a loader that leaves old difficulty on the board",
+      "a job already on the board is scored by today's rules after loading",
+      () => { keep.sl3 = sanitizeLoaded;
+              sanitizeLoaded = function(d){
+                const was = (d.zones || []).map(z => (z.slate || []).map(q => q.difficulty));
+                const r = keep.sl3(d);
+                (r.zones || []).forEach((z, i) => (z.slate || []).forEach((q, j) => {
+                  if (was[i] && was[i][j] !== undefined) q.difficulty = was[i][j]; }));
+                return r; }; },
+      () => { sanitizeLoaded = keep.sl3; }],
+    ["a raid on the board scored as ordinary work",
+      "a job already on the board is scored by today's rules after loading",
+      () => { keep.sd = slateDifficulty;
+              slateDifficulty = function(q, danger){ return questDifficulty(q.type, q.required, danger); }; },
+      () => { slateDifficulty = keep.sd; }],
+    ["a card promising more from one extra than the send panel gives",
+      "the odds on a slate card are the odds the drawer would give",
+      () => { keep.bo2 = bestOdds;
+              bestOdds = function(q){ const o = keep.bo2(q);
+                if (o && o.more !== null) o.more = Math.min(0.99, o.more + 0.05); return o; }; },
+      () => { bestOdds = keep.bo2; }],
     ["the old steep danger curve", "the asked-for party is a real choice at a fair match",
       () => { keep.qds = CONFIG.QUEST_DANGER_SCALE; CONFIG.QUEST_DANGER_SCALE = 0.45; },
       () => { CONFIG.QUEST_DANGER_SCALE = keep.qds; }],
@@ -13181,6 +13436,55 @@ function simulate(opts){
    12 the asked-for party looked fine while in play it sat near 45%.        */
 const WORK_LEVEL = { 1:1, 2:3, 3:6, 4:9, 5:14 };
 
+/* The authored starting roster at a given level, grown the way play grows it
+   (through XP, so the attributes really rise), branched where the level allows.
+   Built from STARTING_HEROES through the real constructor, NEVER from the live
+   save: re-levelling heroes that had already levelled grew their attributes
+   twice, every measurement sat at the cap, and the boot suite failed on every
+   played-in save -- the "1 assertion failed" popup, caught by the fuzzer before
+   it shipped. heroSeq is put back so the next recruit's id is unchanged. */
+function authoredRoster(level){
+  const seq = heroSeq;
+  const hs = STARTING_HEROES.slice(0, CONFIG.ROSTER_START).map(makeHero);
+  heroSeq = seq;
+  return hs.map(h => {
+    h.level = 1; h.xp = xpToReach(level); applyLevels(h);
+    h.injury = { severity:null, healsAt:0 }; h.fatigue = 0; h.status = "idle";
+    h.marks = []; h.gear = { weapon:null, armor:null, trinket:null };
+    h.subclass = null; h.tier3 = null;
+    const l2 = CONFIG.SUBCLASSES[h.cls] || [];
+    if (level >= CONFIG.SUBCLASS_LEVEL && l2.length) h.subclass = l2[0].id;
+    const l3 = h.subclass ? (CONFIG.TIER3[h.subclass] || []) : [];
+    if (level >= CONFIG.TIER3_LEVEL && l3.length) h.tier3 = l3[0].id;
+    return h;
+  });
+}
+/* A campaign's odds as asked, with the authored roster at `level`, in `zoneId`
+   at a given rival track. Campaigns are weight 0 -- never on an ordinary slate
+   -- so staffingGate() never sees them, and the rebalance moved both of them
+   without anything measuring it. This is what does. */
+function campaignOdds(type, zoneId, level, rival){
+  const real = state;
+  try {
+    state = JSON.parse(JSON.stringify(real));
+    state.won = true; state.highcrown = blankHighcrown(); openHighcrown();
+    state.activeQuests = [];
+    const zd = zoneDef(zoneId), zs = zoneOf(zoneId);
+    zs.rival = rival; zs.influence = 30; zs.slate = [];
+    const ros = authoredRoster(level);
+    state.heroes = ros;
+    const t = CONFIG.QUEST_TYPES[type];
+    const q = makeQuest(zs, nowMs(), type);
+    if (!q) return null;
+    q.required = t.min;
+    q.difficulty = slateDifficulty(q, zd.danger);
+    const ctx = { zoneId: zoneId, danger: zd.danger, failed: false };
+    const party = ros.slice().sort((a, b) => heroStat(b, t.stat, ctx) - heroStat(a, t.stat, ctx))
+      .slice(0, q.required);
+    return previewQuest(q, party).chance;
+  } finally { state = real; }
+}
+
 function staffingGate(opts){
   const o = opts || {};
   const fair = o.fair || WORK_LEVEL;
@@ -13199,21 +13503,7 @@ function staffingGate(opts){
        for the third time, from the same class of mistake. Caught by the
        fuzzer before it shipped. heroSeq is put back so the ids the next
        recruit gets are exactly what they would have been. */
-    const seq = heroSeq;
-    const authored = STARTING_HEROES.slice(0, CONFIG.ROSTER_START).map(makeHero);
-    heroSeq = seq;
-    const bare = JSON.stringify(authored);
-    const roster = level => JSON.parse(bare).map(h => {
-      h.level = 1; h.xp = xpToReach(level); applyLevels(h);
-      h.injury = { severity:null, healsAt:0 }; h.fatigue = 0; h.status = "idle";
-      h.marks = []; h.gear = { weapon:null, armor:null, trinket:null };
-      h.subclass = null; h.tier3 = null;
-      const l2 = CONFIG.SUBCLASSES[h.cls] || [];
-      if (level >= CONFIG.SUBCLASS_LEVEL && l2.length) h.subclass = l2[0].id;
-      const l3 = h.subclass ? (CONFIG.TIER3[h.subclass] || []) : [];
-      if (level >= CONFIG.TIER3_LEVEL && l3.length) h.tier3 = l3[0].id;
-      return h;
-    });
+    const roster = authoredRoster;
     const types = o.types || Object.keys(CONFIG.QUEST_TYPES)
       .filter(id => { const t = CONFIG.QUEST_TYPES[id]; return t.weight > 0; });
     for (const type of types){
@@ -13485,6 +13775,15 @@ function sweepPlay(){
       hc().claimant = CONFIG.CLAIMANT_MAX;
       hc().favour = 2; hc().failed = 9;
     });
+    // The far end of the endgame with the starting roster -- where a Levy used
+    // to ask for more heroes than the Keep had.
+    run("deep in the endgame with a small roster", s => {
+      state = s;
+      s.won = true; s.wonAt = nowMs();
+      s.highcrown = blankHighcrown(); openHighcrown();
+      hc().met = maxWritsMet(); hc().favour = 60; hc().claimant = 40;
+      issueWrit(nowMs(), "levy");
+    });
     run("Favour full, nothing standing", s => {
       state = s;
       s.won = true; s.wonAt = nowMs();
@@ -13656,7 +13955,9 @@ function fuzzStates(count, from){
           const H = hc();
           H.favour   = R(CONFIG.FAVOUR_MAX + 1);
           H.claimant = R(CONFIG.CLAIMANT_MAX + 1);
-          H.met = R(14); H.failed = R(6);
+          // The WHOLE endgame, not the first half: capped at 13 this stopped one
+          // writ short of where a six-hero roster could no longer cover a Levy.
+          H.met = R(maxWritsMet() + 1); H.failed = R(6);
           if (rand() < 0.75){
             const kinds = Object.keys(CONFIG.WRIT_KINDS);
             const w = issueWrit(nowMs(), kinds[R(kinds.length)]);
