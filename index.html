@@ -6447,13 +6447,51 @@ function setView(v){
   levyPick.clear();
   succDraft = null;       // a half-made succession is a drill-down like any other
   renounceArm = null;     // and so is a renounce waiting for its second press
-  VIEWS.forEach(n => {
-    $("#v-" + n).hidden = n !== v;
-    $("#nav-" + n).setAttribute("aria-current", String(n === v));
-  });
-  render();
+  render();               // which shows the tab -- see syncView()
 }
 const VIEWS = ["map","roster","keep","highcrown"];
+
+/* Which tab is on screen is DERIVED from currentView, on every render, and
+   nothing else sets it. It used to be set only here, by setView(), so the
+   variable and the screen were two copies of one fact: the boot suite's nav
+   check clicked the real Keep tab, put `currentView` back to "map", and left
+   the Keep section showing. Later checks then drew cloned second and third
+   reigns into it -- a Hall entry named '<b id="hallprobe">X</b>' among them --
+   and re-rendered only "if the player is on the Keep", which by the variable
+   they were not. Rob opened every second-reign session on that screen. */
+function syncView(){
+  VIEWS.forEach(n => {
+    $("#v-" + n).hidden = n !== currentView;
+    $("#nav-" + n).setAttribute("aria-current", String(n === currentView));
+  });
+}
+
+/* Everything that says which screen the player is looking at, so the boot
+   suite can hand it back exactly. Checks draw clones into these sections all
+   the time; the suite ends by emptying every section that is not on screen,
+   so nothing a check drew can surface later, and rendering the one that is. */
+function screenSnapshot(){
+  return { view: currentView, zone: openZone, hero: openHero, quest: selectedQuest,
+           picked: [...picked], levy: [...levyPick], draft: succDraft, renounce: renounceArm };
+}
+function restoreScreen(s, sweep){
+  currentView = s.view; openZone = s.zone; openHero = s.hero; selectedQuest = s.quest;
+  picked.clear();   s.picked.forEach(id => picked.add(id));
+  levyPick.clear(); s.levy.forEach(id => levyPick.add(id));
+  succDraft = s.draft; renounceArm = s.renounce;
+  if (sweep) VIEWS.forEach(n => { if (n !== currentView) $("#v-" + n).innerHTML = ""; });
+  render();
+}
+function screenProblem(s){
+  if (currentView !== s.view) return "the game was left on " + currentView + ", not " + s.view;
+  if (openZone !== s.zone || openHero !== s.hero || selectedQuest !== s.quest)
+    return "the player was left on a different page of " + s.view;
+  const shown = VIEWS.filter(n => !$("#v-" + n).hidden);
+  if (shown.join() !== s.view)
+    return "the screen shows " + (shown.join(" and ") || "nothing") + " while the game is on " + s.view;
+  const left = VIEWS.filter(n => n !== s.view && $("#v-" + n).childNodes.length);
+  return left.length ? "a page off screen still holds what a check drew on it: " + left.join(", ") : null;
+}
 
 /* ---------------------------------------------------------- header ------- */
 function renderHeader(){
@@ -9183,6 +9221,8 @@ function narrate(r){
    console rather than blocking. */
 function render(){
   if (!state) return;
+  // Before the try: a view that throws still leaves the right tab showing.
+  syncView();
   try {
     renderHeader();
     // The tab appears the moment the capital writes, and never goes away again.
@@ -9334,6 +9374,8 @@ function assertAll(){
   // on clones, which moves the counter on, and read later it hid a counter that
   // had been rewound onto ids already in use.
   const heroSeqAtStart = heroSeq;
+  // The screen the player was looking at, handed back at the end.
+  const screenAtStart = screenSnapshot();
   const chk = (name, fn) => {
     ran++; names.push(name);
     try { const r = fn(); if (r !== true) fails.push(name + ": " + r); }
@@ -9830,6 +9872,31 @@ function assertAll(){
       picked.clear(); realPicked.forEach(id => picked.add(id));
       render();
     }
+  });
+
+  chk("the tab on screen is the view the game is on", () => {
+    // The check above clicks the real Keep tab and then puts `currentView` back
+    // -- exactly what every check's cleanup does -- and the Keep section stayed
+    // on screen, so the player opened each session on a Keep the suite had been
+    // drawing clones into. Putting the variable back and rendering must be
+    // enough to put the screen back, or no cleanup anywhere can be trusted.
+    const snap = screenSnapshot();
+    try {
+      // Start from a screen that is wrong on purpose -- the Highcrown page up,
+      // and marked current -- so what follows cannot pass because the tab the
+      // player happened to be on was already the right one.
+      VIEWS.forEach(n => { $("#v-" + n).hidden = n !== "highcrown";
+                           $("#nav-" + n).setAttribute("aria-current", String(n === "highcrown")); });
+      $("#nav-keep").click();
+      const on = () => VIEWS.filter(n => !$("#v-" + n).hidden).join(" and ") || "nothing";
+      const marked = () => VIEWS.filter(n => $("#nav-" + n).getAttribute("aria-current") === "true")
+                                .join(" and ") || "nothing";
+      if (on() !== "keep") return "tapping Keep showed " + on();
+      if (marked() !== "keep") return "tapping Keep marked " + marked() + " as the current tab";
+      currentView = "map"; render();
+      if (on() !== "map") return "the game is back on the map and the screen shows " + on();
+      return marked() === "map" ? true : "the game is back on the map and the nav marks " + marked();
+    } finally { restoreScreen(snap); }
   });
 
   chk("a styled quest card actually wears its class", () => {
@@ -14489,6 +14556,16 @@ function assertAll(){
     return true;
   });
 
+  /* The suite runs on every boot, after the first render, and dozens of its
+     checks draw cloned saves into the views. Each puts back the variables it
+     moved; none can be trusted to put back the SCREEN, and one did not -- the
+     player opened every session on the Keep tab, reading a reign that was not
+     theirs. So the suite hands the screen back itself: the player's own page,
+     drawn from their own save, and every page off screen emptied. */
+  restoreScreen(screenAtStart, true);
+  chk("the suite hands the player back their own screen", () =>
+    screenProblem(screenAtStart) || true);
+
   // Must be last: a diagnostic that perturbs its subject is worse than none.
   // Two checks clone the state to run advance() against it; if either restores
   // by rebinding the global instead of putting the original object back, every
@@ -15872,7 +15949,36 @@ function falsify(opts){
     ["a decay readout that never heard of the Long Winter", "the decay a screen quotes is the decay a region suffers",
       () => { keep.dpd = decayPerDay;
               decayPerDay = z => CONFIG.TIERS[tierIndexFor(z.influence)].decayPerHour * 24; },
-      () => { decayPerDay = keep.dpd; }]
+      () => { decayPerDay = keep.dpd; }],
+    // The screen the boot suite leaves behind. Each restore puts the player's
+    // view back by hand, because a probe that moved it would otherwise leave
+    // the next run snapshotting the wrong screen as "the player's".
+    ["a tab that never changes", "the tab on screen is the view the game is on",
+      () => { keep.sv0 = syncView; syncView = () => {}; },
+      () => { syncView = keep.sv0; render(); }],
+    // The bug as it shipped: the button shows its tab, and nothing else ever does.
+    ["a tab shown only by the button that was pressed", "the tab on screen is the view the game is on",
+      () => { keep.sv = syncView; syncView = () => {};
+              keep.sw = setView;
+              setView = v => { VIEWS.forEach(n => { $("#v-" + n).hidden = n !== v;
+                                                    $("#nav-" + n).setAttribute("aria-current", String(n === v)); });
+                               keep.sw(v); }; },
+      () => { syncView = keep.sv; setView = keep.sw; render(); }],
+    ["a nav that never marks the current tab", "the tab on screen is the view the game is on",
+      () => { keep.sv2 = syncView;
+              syncView = () => VIEWS.forEach(n => { $("#v-" + n).hidden = n !== currentView; }); },
+      () => { syncView = keep.sv2; render(); }],
+    ["a suite that leaves its drawings off screen", "the suite hands the player back their own screen",
+      () => { keep.rs = restoreScreen; restoreScreen = s => keep.rs(s, false); },
+      () => { restoreScreen = keep.rs; }],
+    ["a suite that forgets which tab the player was on", "the suite hands the player back their own screen",
+      () => { keep.rs2 = restoreScreen; keep.rs2v = screenSnapshot();
+              restoreScreen = (s, sw) => keep.rs2(Object.assign({}, s, { view: s.view === "keep" ? "map" : "keep" }), sw); },
+      () => { restoreScreen = keep.rs2; keep.rs2(keep.rs2v, true); }],
+    ["a suite that leaves a second page showing", "the suite hands the player back their own screen",
+      () => { keep.rs3 = restoreScreen;
+              restoreScreen = (s, sw) => { keep.rs3(s, sw); $("#v-" + VIEWS.filter(n => n !== s.view)[0]).hidden = false; }; },
+      () => { restoreScreen = keep.rs3; render(); }]
   ];
 
   const before = assertAll();
