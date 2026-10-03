@@ -54,6 +54,9 @@ header{
 .res .r{display:flex;align-items:center;gap:3px;color:var(--muted)}
 .res .r.on b{color:var(--ink)}
 .res .r.off{opacity:.42}
+.resbtn{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;background:none;border:0;
+  padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;text-align:left;border-radius:4px}
+.res .r .rn{font-size:10.5px;color:var(--dim);margin-left:2px}
 .hstat{margin-left:auto;display:flex;gap:7px;font-size:11.5px}
 .hstat span{color:var(--muted)}
 .hstat i{font-style:normal;font-variant-numeric:tabular-nums}
@@ -219,6 +222,7 @@ button{font-family:var(--sans)}
 .qodds{font-family:var(--sans);font-size:11.5px;color:var(--muted);margin-top:6px;
   padding-top:6px;border-top:1px dashed var(--line)}
 .qodds b{font-weight:700;font-size:12.5px}
+.qgain{float:right;color:var(--muted)}
 .qodds .good{color:var(--verd)} .qodds .warn{color:var(--t3)} .qodds .bad{color:var(--crimson)}
 .qexp{margin-left:auto;color:var(--dim)}
 .qexp.soon{color:var(--crimson)}
@@ -274,6 +278,30 @@ button{font-family:var(--sans)}
 .hpick .pw{font-family:var(--sans);font-size:12px;text-align:right;flex:none}
 .hpick.busy{opacity:.42;cursor:default}
 .hpick.busy:hover{border-color:var(--line)}
+.tipq{width:16px;height:16px;padding:0;margin-left:4px;border-radius:50%;cursor:pointer;
+  border:1px solid var(--line2);background:transparent;color:var(--muted);font-size:10px;
+  font-weight:700;line-height:1;vertical-align:1px}
+.tipq[aria-expanded="true"]{border-color:var(--gold-dim);color:var(--t4)}
+.hgroup{font-family:var(--sans);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--dim);margin:10px 0 5px}
+/* Pinned just above the nav while the send panel is on screen; at the end of
+   the panel it simply sits in place. --navh is measured, not guessed, because
+   the nav's height depends on the font and the phone's safe area. */
+.sendbar{display:flex;align-items:center;gap:10px;margin-top:9px;padding:8px 10px;
+  background:var(--panel2);border:1px solid var(--line2);border-radius:var(--radius);
+  font-family:var(--sans);font-size:12px;color:var(--muted)}
+/* Pinned only once somebody is picked: before that it has nothing to say, and
+   on a short screen it would sit over the very rows waiting to be tapped. */
+.sendbar.pinned{position:sticky;bottom:calc(var(--navh, 62px) + 6px);z-index:6;
+  border-color:var(--gold-dim);box-shadow:0 -6px 16px rgba(0,0,0,.5)}
+.sendbar .sb{flex:1;min-width:0;line-height:1.35}
+.sendbar .sb b{font-size:13.5px;font-weight:700;color:var(--ink)}
+.sendbar .sb b.good{color:var(--verd)} .sendbar .sb b.warn{color:var(--t3)}
+.sendbar .sb b.bad{color:var(--crimson)}
+.sendbar .btn{flex:none;min-width:84px}
+/* The event, inside the region's own card. */
+.zev{border-top:1px solid var(--line);margin-top:9px;padding-top:8px}
+.charter.quiet{padding:8px 11px}
 .readout{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-family:var(--sans);
   font-size:12px;margin:9px 0;padding:9px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .readout div{display:flex;justify-content:space-between;gap:8px}
@@ -340,6 +368,11 @@ button{font-family:var(--sans)}
 .mini.out{width:84px;height:5px;margin-left:auto;margin-top:5px}
 .mini.out i{background:linear-gradient(90deg,var(--gold-dim),var(--gold))}
 .hero{cursor:pointer}
+.hero.compact{padding-top:6px;padding-bottom:6px;margin-bottom:5px}
+.hero.compact .body b{font-size:13.5px}
+.rhead{display:flex;align-items:center;gap:10px}
+.rhead h2{flex:1}
+.offerwait{padding:8px 11px}
 .hero:hover{border-color:var(--line2);background:var(--panel2)}
 
 /* trait chips */
@@ -417,6 +450,11 @@ button{font-family:var(--sans)}
   font-family:var(--sans);font-size:12px}
 .cost{display:inline-flex;align-items:center;gap:3px;color:var(--ink)}
 .cost.short{color:var(--crimson)}
+.cost .gap{font-style:normal;font-size:10.5px;opacity:.85}
+.buyrow{display:flex;align-items:center;gap:10px;margin-top:6px}
+.buyrow .costrow{flex:1;margin:0}
+.build.can{border-color:var(--gold-dim);box-shadow:inset 3px 0 0 var(--gold)}
+.readycount{color:var(--t4);font-weight:600;letter-spacing:.03em;text-transform:none}
 .xpbar{height:3px;background:#2a231b;border-radius:2px;overflow:hidden;margin-top:3px;max-width:150px}
 .xpbar i{display:block;height:100%;background:var(--azure)}
 .branchdot{color:var(--t4);font-weight:600}
@@ -483,6 +521,15 @@ button{font-family:var(--sans)}
 .absrow .fell{color:var(--crimson);font-size:11px}
 .absrow.dropped .zn{color:var(--crimson)}
 .logh{margin:2px 0 9px}
+/* What to do next, at the end of the report. */
+.needs{border:1px solid var(--gold-dim);border-radius:var(--radius);padding:9px 11px;margin-top:12px;
+  background:rgba(201,162,39,.05)}
+.needs .eh{font-family:var(--sans);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--t4);margin-bottom:5px}
+.need{font-family:var(--sans);font-size:12px;padding:3px 0 3px 12px;position:relative;color:var(--ink)}
+.need::before{content:"";position:absolute;left:2px;top:9px;width:4px;height:4px;border-radius:50%;
+  background:var(--gold-dim)}
+.need.n-raid::before,.need.n-fell::before{background:var(--crimson)}
 .entry.victory{border-bottom:0;background:rgba(224,185,63,.06);
   border:1px solid var(--gold-dim);border-radius:var(--radius);padding:11px}
 .entry.victory .eh{color:var(--t4)}
@@ -821,7 +868,10 @@ const CONFIG = {
   // The reign that was passed on, kept until the next succession: succession
   // cannot be undone in play, so this is the last-resort way back.
   SAVE_BACKUP_KEY: "bannerkeep.previous-reign",
-  SAVE_VERSION: 2,          // 2: Phase 2 added hero identity (portrait, home zone, hook, traits)
+  // How the player likes the screens -- compact roster, tips already read. Kept
+  // out of the save so it survives a succession and never touches the game.
+  UI_PREFS_KEY: "bannerkeep.ui",
+  SAVE_VERSION: 2,         // 2: Phase 2 added hero identity (portrait, home zone, hook, traits)
   SAVE_DEBOUNCE_MS: 500,
   TICK_MS: 1000,
 
@@ -1824,7 +1874,7 @@ const CLEAR_QUESTS = {
   greenhollow: [
     { name:"Wolves at the Mill Ford", flavor:"A pack has taken to crossing at the ford each dusk and the miller's family will not go near the water." },
     { name:"The Toll on Reedy Lane", flavor:"Coterie men have strung a rope across Reedy Lane and charge every cart that tries to pass." },
-    { name:"Rustlers Off the Low Pasture", flavor:"Someone has been driving cattle off the low pasture in the small hours and the herd is thinning fast." },
+    { name:"Rustlers off the Low Pasture", flavor:"Someone has been driving cattle off the low pasture in the small hours and the herd is thinning fast." },
     { name:"The Hedgerow Bandits", flavor:"A band is hiding in the hedgerows along the north road and robbing travelers before they reach the gate." },
     { name:"Dogs Gone Feral at Copse End", flavor:"A pack of dogs turned loose after the plague years has taken to hunting sheep near Copse End." },
     { name:"The New Coterie Toll Post", flavor:"The Bandit Coterie has planted a toll post on the bridge road and turns away anyone who will not pay." },
@@ -1876,7 +1926,7 @@ const CLEAR_QUESTS = {
     { name: "Milestone Robbers", flavor: "Riders wait at the north milestone and strip every cart before it reaches the crest of the road." },
     { name: "The Waystation Scrap", flavor: "A burned waystation has become a den for men who no longer answer to any banner at all." },
     { name: "Barrow Ridge Skirmish", flavor: "Grave robbers are cutting into the ridge barrows and fighting off anyone sent to stop them." },
-    { name: "The Drovers Quarrel", flavor: "A dispute over grazing rights along the road has turned to blades between two drover camps." },
+    { name: "The Drovers' Quarrel", flavor: "A dispute over grazing rights along the road has turned to blades between two drover camps." },
     { name: "Culvert Gang Clearance", flavor: "Deserters are living beneath the road culvert and robbing anyone forced to wade through it." },
     { name: "The Cinder Camp Raid", flavor: "A burned croft has become a staging ground for raiders who strike the road after dark." },
     { name: "Fogbank Ambush", flavor: "Riders have taken to striking carts in the thick morning fog and vanishing before anyone arrives." }
@@ -1895,21 +1945,21 @@ const QUIET_QUESTS = {
     marrowfen: [
       { name: "The Causeway Circuit", flavor: "The causeway through the fen needs a steady walker now that the water is rising early this year." },
       { name: "The Ferry Landings Round", flavor: "The ferrymen want a familiar face at each landing so the crossings stay orderly through the flood season." },
-      { name: "The Peat Cutters Watch", flavor: "The peat cutters asked for someone to walk their cuttings so the work goes on without incident." },
+      { name: "The Peat Cutters' Watch", flavor: "The peat cutters asked for someone to walk their cuttings so the work goes on without incident." },
       { name: "The Sunken Chapel Walk", flavor: "The half drowned chapel path needs a steady presence now that strange lights have been seen after dusk." },
       { name: "The Black Water Vigil", flavor: "The fen villages want the Keep's colours seen along the black water road through the wet months." }
     ],
     thornmarch: [
       { name: "The Upland Circuit", flavor: "The high pastures need a steady walker now that the briar has closed over half the old paths." },
       { name: "The Quarry Road Watch", flavor: "The quarrymen asked for a presence on the road so the carts move freely past the Vantre checkpoints." },
-      { name: "The Shepherds Track Round", flavor: "The shepherds want someone walking their tracks before the lambing season brings trouble down from the ridge." },
+      { name: "The Shepherds' Track Round", flavor: "The shepherds want someone walking their tracks before the lambing season brings trouble down from the ridge." },
       { name: "The Border Fort Walk", flavor: "The ruined border forts need a walker to keep squatters and worse from settling in the old towers." },
       { name: "The Briar Line Vigil", flavor: "The villages along the briar line want a steady presence while the feud with the Vantre tenants simmers." }
     ],
     ashenreach: [
       { name: "The Ash Road Circuit", flavor: "The ash road between the settlements needs a steady walker while the ground still shifts underfoot." },
       { name: "The Cinder Flats Round", flavor: "The salvage crews asked for a presence on the flats so the ash knights keep their distance from the diggings." },
-      { name: "The Glass Cutters Watch", flavor: "The glass cutters want someone walking their claim so the cinderglass beds stay theirs to work." },
+      { name: "The Glass Cutters' Watch", flavor: "The glass cutters want someone walking their claim so the cinderglass beds stay theirs to work." },
       { name: "The Burnt Ward Walk", flavor: "The last standing ward of the burnt town needs a steady presence to keep the settlers from losing heart." },
       { name: "The Salvage Line Vigil", flavor: "The salvage line needs a walker now that the ash knights have been seen circling closer each week." }
     ],
@@ -1925,34 +1975,34 @@ const QUIET_QUESTS = {
     greenhollow: [
       { name: "The Barn Ledger Query", flavor: "The tithe barn ledger and the grain in the loft do not agree and the reeve wants an explanation." },
       { name: "The Toll Gate Rumor", flavor: "Word has spread that the coteries have a man inside the toll gate and someone needs to learn who." },
-      { name: "The Millers Missing Sacks", flavor: "Sacks of flour keep vanishing from the mill between the weighing and the cart and no one can say how." },
+      { name: "The Miller's Missing Sacks", flavor: "Sacks of flour keep vanishing from the mill between the weighing and the cart and no one can say how." },
       { name: "The Orchard Boundary Question", flavor: "Two farms both claim the same row of orchard trees and the old boundary markers have gone missing." },
       { name: "The Hedge Fire Question", flavor: "A hedge fire burned too neatly to be an accident and the reeve wants to know who benefits from it." }
     ],
     marrowfen: [
-      { name: "The Ferrymans Manifest", flavor: "The ferryman's manifest lists more barrels than ever reach the far bank and someone should ask why." },
+      { name: "The Ferryman's Manifest", flavor: "The ferryman's manifest lists more barrels than ever reach the far bank and someone should ask why." },
       { name: "The Chapel Bell Question", flavor: "The sunken chapel bell has been heard ringing at night and the fen folk want to know who rings it." },
-      { name: "The Bog Iron Count", flavor: "The bog iron brought up this season falls short of what the diggers swear they pulled from the mud." },
+      { name: "The Bog-Iron Count", flavor: "The bog iron brought up this season falls short of what the diggers swear they pulled from the mud." },
       { name: "The Missing Peat Barge", flavor: "A peat barge left the landing and never arrived and the ferrymen want an answer before the next one sails." },
-      { name: "The Drowned Courts Toll", flavor: "Fen folk whisper of a toll paid to something under the water and the reeve wants the truth of it." }
+      { name: "The Drowned Court's Toll", flavor: "Fen folk whisper of a toll paid to something under the water and the reeve wants the truth of it." }
     ],
     thornmarch: [
       { name: "The Quarry Accounts", flavor: "The quarry's accounts show stone leaving that no wagon on record ever carried away." },
       { name: "The Vantre Boundary Claim", flavor: "House Vantre has produced an old deed claiming a pasture that three villages swear was always common land." },
-      { name: "The Shepherds Missing Flock", flavor: "A shepherd's whole flock went missing overnight and the tracks left behind match no known predator." },
+      { name: "The Shepherd's Missing Flock", flavor: "A shepherd's whole flock went missing overnight and the tracks left behind match no known predator." },
       { name: "The Fort Garrison Roll", flavor: "The old fort's garrison roll lists names that no one in the nearest village has ever heard of." },
       { name: "The Feud Letters", flavor: "Letters passed between two feuding villages hint at an arrangement neither side wants the reeve to see." }
     ],
     ashenreach: [
       { name: "The Salvage Manifest", flavor: "A salvage crew's manifest claims cinderglass that never reached the buyer and someone wants to know where it went." },
-      { name: "The Glass Cutters Complaint", flavor: "The glass cutters claim their best seam was picked clean overnight by hands that were not their own." },
-      { name: "The Ash Knight Sermon", flavor: "An ash knight has been preaching to settlers about the burning and someone should learn what he actually wants." },
+      { name: "The Glass Cutters' Complaint", flavor: "The glass cutters claim their best seam was picked clean overnight by hands that were not their own." },
+      { name: "The Ash-Knight Sermon", flavor: "An ash knight has been preaching to settlers about the burning and someone should learn what he actually wants." },
       { name: "The Settlement Well Question", flavor: "The settlement's only well has gone bitter and no one can say what changed to spoil it." },
       { name: "The Cinderglass Ledger", flavor: "The cinderglass ledger and the crates in the warehouse tell two different stories about this season's haul." }
     ],
     harrowgate: [
       { name: "The Tollhouse Ledger", flavor: "Old toll receipts are read line by line to learn who has been paying the Crownless and how much." },
-      { name: "Whispers At The Gate", flavor: "Travelers waiting at the capital gate are asked quiet questions about who controls the road now." },
+      { name: "Whispers at the Gate", flavor: "Travelers waiting at the capital gate are asked quiet questions about who controls the road now." },
       { name: "The Barrow Marks", flavor: "Fresh cuts on the barrow stones are studied to learn who has been digging and what they found." },
       { name: "The Missing Manifest", flavor: "A manifest lost at the last waystation is traced mile by mile to learn where the cargo went." },
       { name: "The Gibbet Names", flavor: "Names carved beneath the gibbets are copied down and matched against the old garrison rolls." }
@@ -1961,35 +2011,35 @@ const QUIET_QUESTS = {
   court: {
     greenhollow: [
       { name: "The Ashfield Funeral", flavor: "The old widow is being buried and her sons are already arguing over the mill in front of the mourners." },
-      { name: "The Reeves Table", flavor: "The reeve has asked for a Keep presence at his table while he hears complaints from the tenant farmers." },
+      { name: "The Reeve's Table", flavor: "The reeve has asked for a Keep presence at his table while he hears complaints from the tenant farmers." },
       { name: "The Harvest Wedding", flavor: "Two farming families are joining their lands through marriage and want the Keep's blessing witnessed at the feast." },
-      { name: "The Millers Surety", flavor: "The miller needs someone of standing to vouch for him before the guild will renew his charter." },
+      { name: "The Miller's Surety", flavor: "The miller needs someone of standing to vouch for him before the guild will renew his charter." },
       { name: "The Boundary Arbitration", flavor: "Two neighboring farms want a fair hand to sit and settle where one field ends and the other begins." }
     ],
     marrowfen: [
-      { name: "The Ferrymans Wake", flavor: "The old ferryman has died and his family wants the Keep represented at the wake out of respect." },
+      { name: "The Ferryman's Wake", flavor: "The old ferryman has died and his family wants the Keep represented at the wake out of respect." },
       { name: "The Fen Village Wedding", flavor: "A fen village wedding calls for a guest of standing to sit at the high table and be seen approving." },
       { name: "The Peat Rights Hearing", flavor: "Two peat cutting families need someone to sit and hear their claims before the dispute turns bitter." },
       { name: "The Chapel Restoration Sitting", flavor: "The fen elders want a Keep presence at the sitting where they decide whether to rebuild the drowned chapel." },
-      { name: "The Widows Surety", flavor: "A fen widow needs someone of standing to stand surety for her before the ferrymen will trust her boat." }
+      { name: "The Widow's Surety", flavor: "A fen widow needs someone of standing to stand surety for her before the ferrymen will trust her boat." }
     ],
     thornmarch: [
       { name: "The Quarry Dispute Sitting", flavor: "Two quarry masters need a fair hand to sit and settle who owns the newest seam of stone." },
-      { name: "The Shepherds Wedding", flavor: "A shepherd family's wedding calls for a Keep presence to bless the joining of two grazing rights." },
+      { name: "The Shepherds' Wedding", flavor: "A shepherd family's wedding calls for a Keep presence to bless the joining of two grazing rights." },
       { name: "The Vantre Table", flavor: "House Vantre has invited a Keep representative to sit at their table and discuss the disputed pasture." },
       { name: "The Feud Arbitration", flavor: "Two feuding villages have agreed to let a neutral party sit and hear both sides before it comes to blows." },
       { name: "The Garrison Funeral", flavor: "An old garrison captain has died and the villages want the Keep represented at his funeral rites." }
     ],
     ashenreach: [
       { name: "The Salvage Crew Wedding", flavor: "A salvage crew wedding calls for a Keep presence to bless a rare piece of good news among the ash." },
-      { name: "The Glass Cutters Dispute", flavor: "Two glass cutting families need a fair hand to sit and settle who claims the new seam of cinderglass." },
-      { name: "The Ash Knight Parley", flavor: "An ash knight has requested a formal sitting to discuss terms with the last settlement standing nearby." },
+      { name: "The Glass Cutters' Dispute", flavor: "Two glass cutting families need a fair hand to sit and settle who claims the new seam of cinderglass." },
+      { name: "The Ash-Knight Parley", flavor: "An ash knight has requested a formal sitting to discuss terms with the last settlement standing nearby." },
       { name: "The Settlement Funeral", flavor: "A settlement elder has died and the survivors want the Keep represented at the burial among the ash." },
       { name: "The Cinderglass Surety", flavor: "A glass cutter needs someone of standing to vouch for him before the traders will deal with him again." }
     ],
     harrowgate: [
       { name: "The Tollgate Petition", flavor: "A petition to lower the northern toll is carried before the garrison captain in careful language." },
-      { name: "A Funeral At The Crossroads", flavor: "A slain drover is buried at the crossroads while both sides of the road watch in uneasy silence." },
+      { name: "A Funeral at the Crossroads", flavor: "A slain drover is buried at the crossroads while both sides of the road watch in uneasy silence." },
       { name: "The Capital Table", flavor: "A seat is held at the capital table long enough to remind the court the Keep still exists." },
       { name: "The Disputed Toll", flavor: "Two toll-keepers claiming the same gate are made to argue their claim before a neutral bench." },
       { name: "The Widow's Petition", flavor: "A widow is heard out in full before the garrison table and sent home with her claim recorded." }
@@ -2001,31 +2051,31 @@ const DANGEROUS_QUESTS = {
   hunt: {
     greenhollow: [
       { name: "The Mill Ford Pack", quarry: "The Grey Bitch", flavor: "One old wolf has been leading the pack across the ford and the local men have stopped trying." },
-      { name: "Tracking The Culvert Boys", quarry: "The Culvert Boys", flavor: "A small band has been raiding grain carts along the sunken lane for two seasons running." },
+      { name: "Tracking the Culvert Boys", quarry: "The Culvert Boys", flavor: "A small band has been raiding grain carts along the sunken lane for two seasons running." },
       { name: "Running Down Harlan Coe", quarry: "Harlan Coe", flavor: "A deserter turned toll rider has been shaking down millers on the low road since spring." },
       { name: "The Hedgerow Stalker", quarry: "The Hedgerow Wolf", flavor: "Something has been pulling lambs through gaps in the hedge and leaving the rest untouched." },
-      { name: "Ending The Ottick Gang", quarry: "Grey Ottick", flavor: "Ottick and his three riders have burned two granaries and dared the Keep to answer." }
+      { name: "Ending the Ottick Gang", quarry: "Grey Ottick", flavor: "Ottick and his three riders have burned two granaries and dared the Keep to answer." }
     ],
     marrowfen: [
       { name: "The Black Water Eel", quarry: "The Black Eel", flavor: "Something long and pale has been dragging bog-iron workers under the black water at dusk." },
       { name: "The Chapel Bell Widow", quarry: "The Bell Widow", flavor: "A fen-witch has been ringing the sunken chapel bell to draw travelers off the safe path." },
-      { name: "Hunting The Leech Mother", quarry: "The Leech Mother", flavor: "A bloated thing in the reeds has been feeding on anything that wades too deep into the fen." },
+      { name: "Hunting the Leech Mother", quarry: "The Leech Mother", flavor: "A bloated thing in the reeds has been feeding on anything that wades too deep into the fen." },
       { name: "The Drowned Reeve", quarry: "The Drowned Reeve", flavor: "A dead man in a reeves chain has been seen walking the dike roads and calling out old names." },
-      { name: "Silencing The Fen Piper", quarry: "The Fen Piper", flavor: "Something plays a pipe out past the bog-iron works and every soul who follows it stops coming back." }
+      { name: "Silencing the Fen Piper", quarry: "The Fen Piper", flavor: "Something plays a pipe out past the bog-iron works and every soul who follows it stops coming back." }
     ],
     thornmarch: [
-      { name: "The Briar Cat Of Coldrift", quarry: "The Coldrift Cat", flavor: "A briar-cat larger than any on record has been taking shepherds off the high pasture alone." },
-      { name: "Tracking The Vantre Rider", quarry: "Serel Vantre", flavor: "A Vantre outrider has been riding the border stones alone and marking Keep land as his own." },
-      { name: "The Stone Troll Of Quarry End", quarry: "The Quarry End Troll", flavor: "A troll has taken the old quarry face for its own and will not let the stone cutters back in." },
-      { name: "Ending The Grey Company", quarry: "The Grey Company", flavor: "A company of hired swords has been squatting the border fort and charging Keep folk to pass." },
-      { name: "Hunting The Briar King", quarry: "The Briar King", flavor: "The largest cat on the march has claimed the ruined fort itself and sleeps in the old hall." }
+      { name: "The Briar-Cat of Coldrift", quarry: "The Coldrift Cat", flavor: "A briar-cat larger than any on record has been taking shepherds off the high pasture alone." },
+      { name: "Tracking the Vantre Rider", quarry: "Serel Vantre", flavor: "A Vantre outrider has been riding the border stones alone and marking Keep land as his own." },
+      { name: "The Stone-Troll of Quarry End", quarry: "The Quarry End Troll", flavor: "A troll has taken the old quarry face for its own and will not let the stone cutters back in." },
+      { name: "Ending the Grey Company", quarry: "The Grey Company", flavor: "A company of hired swords has been squatting the border fort and charging Keep folk to pass." },
+      { name: "Hunting the Briar King", quarry: "The Briar King", flavor: "The largest cat on the march has claimed the ruined fort itself and sleeps in the old hall." }
     ],
     ashenreach: [
-      { name: "The Cinder Beast Of Kilnfall", quarry: "The Kilnfall Beast", flavor: "A beast of ash and coal has been burning its way through the cinderglass flats for a season." },
-      { name: "Hunting The Ash Wight", quarry: "The Kiln Wight", flavor: "A wight that will not stay buried keeps rising from the same drift of ash outside the kilns." },
-      { name: "Tracking The Ash Knight", quarry: "Ser Coalen", flavor: "An Ash-Knight has broken from his order and now hunts alone through the burnt ruins." },
+      { name: "The Cinder-Beast of Kilnfall", quarry: "The Kilnfall Beast", flavor: "A beast of ash and coal has been burning its way through the cinderglass flats for a season." },
+      { name: "Hunting the Ash-Wight", quarry: "The Kiln Wight", flavor: "A wight that will not stay buried keeps rising from the same drift of ash outside the kilns." },
+      { name: "Tracking the Ash-Knight", quarry: "Ser Coalen", flavor: "An Ash-Knight has broken from his order and now hunts alone through the burnt ruins." },
       { name: "The Glassfield Stalker", quarry: "The Glassfield Beast", flavor: "Something moves under the cinderglass field and has taken three search parties without a trace." },
-      { name: "Ending The Cinder Pack", quarry: "The Cinder Pack", flavor: "A pack of ash-beasts has been denning in the burnt ruins and picking off anyone who camps nearby." }
+      { name: "Ending the Cinder Pack", quarry: "The Cinder Pack", flavor: "A pack of ash-beasts has been denning in the burnt ruins and picking off anyone who camps nearby." }
     ],
     harrowgate: [
       { name: "The Cairn Boar Contract", quarry: "The Cairn Boar", flavor: "A boar the size of a doorway has been rooting through the barrow cairns and goring every dog sent after it." },
@@ -2039,30 +2089,30 @@ const DANGEROUS_QUESTS = {
     greenhollow: [
       { name: "The Flooded Undercroft", flavor: "The chapel undercroft has been under water for a generation and something in it has started moving." },
       { name: "The Collapsed Grain Vault", flavor: "The old grain vault collapsed in the spring floods and no one has been down to see what is left." },
-      { name: "The Millers Cellar", flavor: "The mill owner sealed his cellar after the fire and something has been knocking to get out." },
+      { name: "The Miller's Cellar", flavor: "The mill owner sealed his cellar after the fire and something has been knocking to get out." },
       { name: "The Sunken Tithe Barn", flavor: "The old tithe barn sank into its own foundations years ago and the grain below has not rotted." },
       { name: "The Buried Well House", flavor: "The well house collapsed onto its own shaft and the rope keeps coming back up cut clean through." }
     ],
     marrowfen: [
       { name: "The Sunken Chapel Crypt", flavor: "The chapel crypt has been under black water since the flood and the coffins are floating loose." },
-      { name: "The Bog Iron Shaft", flavor: "The old bog-iron shaft flooded from below and the miners who went to check the pumps did not return." },
+      { name: "The Bog-Iron Shaft", flavor: "The old bog-iron shaft flooded from below and the miners who went to check the pumps did not return." },
       { name: "The Drowned Court Below", flavor: "A stair beneath the fen leads down to halls that should have rotted away a century ago." },
-      { name: "The Fen Witch Cellar", flavor: "A cellar half sunk in the mire holds jars and bones the fen-witches never finished burying." },
+      { name: "The Fen-Witch Cellar", flavor: "A cellar half sunk in the mire holds jars and bones the fen-witches never finished burying." },
       { name: "The Fording House Ruins", flavor: "The old fording house sank into the mire with its doors still barred from the inside." }
     ],
     thornmarch: [
       { name: "The Collapsed Border Fort", flavor: "Half the old border fort fell into its own cellars during the winter frost and the rest is following." },
       { name: "The Quarry Pit Below", flavor: "The deep quarry flooded and cracked into older workings that no map of the march shows." },
       { name: "The Buried Garrison Hall", flavor: "A whole garrison hall collapsed in on itself decades ago and the bones are still in their beds." },
-      { name: "The Stone Troll Warren", flavor: "Something has dug a warren under the old quarry face and dragged half a shift down with it." },
+      { name: "The Stone-Troll Warren", flavor: "Something has dug a warren under the old quarry face and dragged half a shift down with it." },
       { name: "The Vantre Strongroom", flavor: "House Vantre sealed a strongroom under the border fort before they lost it and never came back for it." }
     ],
     ashenreach: [
       { name: "The Buried Kiln Works", flavor: "The old kiln works collapsed under its own ash and something has been stoking the fires below." },
       { name: "The Cinderglass Vault", flavor: "A vault of black cinderglass sits beneath the ruins and the air inside will not clear." },
-      { name: "The Ash Choked Cellars", flavor: "The cellars under the burnt manor fill with ash faster than anyone can dig them out." },
+      { name: "The Ash-Choked Cellars", flavor: "The cellars under the burnt manor fill with ash faster than anyone can dig them out." },
       { name: "The Sunken Forge Hall", flavor: "The old forge hall sank into the ash flats and the coals beneath it have never gone cold." },
-      { name: "The Ash Knight Crypt", flavor: "The Ash-Knights sealed their own dead beneath the ruins and swore never to disturb it." }
+      { name: "The Ash-Knight Crypt", flavor: "The Ash-Knights sealed their own dead beneath the ruins and swore never to disturb it." }
     ],
     harrowgate: [
       { name: "The Barrow Undercroft", flavor: "Three chambers beneath the ridge barrow are cleared in turn, each colder and narrower than the last." },
@@ -2074,32 +2124,32 @@ const DANGEROUS_QUESTS = {
   },
   warfront: {
     greenhollow: [
-      { name: "Breaking The Toll Line", flavor: "The Coteries have fortified three crossings at once and the harvest cannot move until they are broken." },
-      { name: "The Relief Of Harrow Mill", flavor: "The Coteries have held the mill under siege for a fortnight and the village inside is running short of grain." },
-      { name: "Storming The Coterie Camp", flavor: "The Bandit Coteries have massed at their winter camp and mean to hold the whole valley by force." },
-      { name: "Clearing The Long Road", flavor: "Every wagon on the long road now pays the Coteries or does not arrive and the Keep has had enough." },
-      { name: "The Fall Of Grays Crossing", flavor: "The Coteries have taken the bridge at Grays Crossing and cut the harvest road clean in two." }
+      { name: "Breaking the Toll Line", flavor: "The Coteries have fortified three crossings at once and the harvest cannot move until they are broken." },
+      { name: "The Relief of Harrow Mill", flavor: "The Coteries have held the mill under siege for a fortnight and the village inside is running short of grain." },
+      { name: "Storming the Coterie Camp", flavor: "The Bandit Coteries have massed at their winter camp and mean to hold the whole valley by force." },
+      { name: "Clearing the Long Road", flavor: "Every wagon on the long road now pays the Coteries or does not arrive and the Keep has had enough." },
+      { name: "The Fall of Gray's Crossing", flavor: "The Coteries have taken the bridge at Gray's Crossing and cut the harvest road clean in two." }
     ],
     marrowfen: [
-      { name: "The Siege Of Blackmere", flavor: "The Drowned Court has raised the water around Blackmere and means to drown the garrison out." },
-      { name: "Breaking The Fen Line", flavor: "The Drowned Court has massed its dead along the whole dike line and the water keeps rising to meet them." },
-      { name: "The Relief Of Sedge Hall", flavor: "Sedge Hall has been cut off by rising black water and the Drowned Court is patient enough to wait it out." },
-      { name: "Storming The Sunken Court", flavor: "The Drowned Court has come up out of the black water in numbers no one in the fen has seen before." },
-      { name: "Holding The Bog Iron Line", flavor: "The Drowned Court means to take the bog-iron works and starve the Keep of its only iron." }
+      { name: "The Siege of Blackmere", flavor: "The Drowned Court has raised the water around Blackmere and means to drown the garrison out." },
+      { name: "Breaking the Fen Line", flavor: "The Drowned Court has massed its dead along the whole dike line and the water keeps rising to meet them." },
+      { name: "The Relief of Sedge Hall", flavor: "Sedge Hall has been cut off by rising black water and the Drowned Court is patient enough to wait it out." },
+      { name: "Storming the Sunken Court", flavor: "The Drowned Court has come up out of the black water in numbers no one in the fen has seen before." },
+      { name: "Holding the Bog-Iron Line", flavor: "The Drowned Court means to take the bog-iron works and starve the Keep of its only iron." }
     ],
     thornmarch: [
-      { name: "The Siege Of Coldrift Fort", flavor: "House Vantre has ringed Coldrift Fort with soldiers and lawyers both and means to take it by either." },
-      { name: "Breaking The Vantre Line", flavor: "House Vantre has drawn its outriders and mercenaries into one line across the high pasture." },
-      { name: "The Relief Of Stonegate", flavor: "Stonegate has held against House Vantre for a month and cannot hold through another siege." },
+      { name: "The Siege of Coldrift Fort", flavor: "House Vantre has ringed Coldrift Fort with soldiers and lawyers both and means to take it by either." },
+      { name: "Breaking the Vantre Line", flavor: "House Vantre has drawn its outriders and mercenaries into one line across the high pasture." },
+      { name: "The Relief of Stonegate", flavor: "Stonegate has held against House Vantre for a month and cannot hold through another siege." },
       { name: "Storming Vantre Hold", flavor: "House Vantre has massed its household soldiers at the hold and dared the Keep to come and take it back." },
-      { name: "Holding The Quarry Line", flavor: "House Vantre means to seize the quarries outright and has brought soldiers enough to hold them." }
+      { name: "Holding the Quarry Line", flavor: "House Vantre means to seize the quarries outright and has brought soldiers enough to hold them." }
     ],
     ashenreach: [
-      { name: "The Siege Of Kilnfall", flavor: "The Ash-Knights have surrounded Kilnfall and mean to burn it clean the way they burned the reach." },
-      { name: "Breaking The Ash Knight Line", flavor: "The Ash-Knights have drawn their whole patrol strength into one line across the cinderglass flats." },
-      { name: "The Relief Of Cinderhold", flavor: "Cinderhold has held against the Ash-Knights through the choking air and cannot hold much longer." },
-      { name: "Storming The Burnt Cathedral", flavor: "The Ash-Knights have massed at the burnt cathedral and call the coming fight a holy one." },
-      { name: "Holding The Reach Road", flavor: "The Ash-Knights mean to cut the only road through the reach and strand the Keep on the wrong side of the ash." }
+      { name: "The Siege of Kilnfall", flavor: "The Ash-Knights have surrounded Kilnfall and mean to burn it clean the way they burned the reach." },
+      { name: "Breaking the Cinderglass Line", flavor: "The Ash-Knights have drawn their whole patrol strength into one line across the cinderglass flats." },
+      { name: "The Relief of Cinderhold", flavor: "Cinderhold has held against the Ash-Knights through the choking air and cannot hold much longer." },
+      { name: "Storming the Burnt Cathedral", flavor: "The Ash-Knights have massed at the burnt cathedral and call the coming fight a holy one." },
+      { name: "Holding the Reach Road", flavor: "The Ash-Knights mean to cut the only road through the reach and strand the Keep on the wrong side of the ash." }
     ],
     harrowgate: [
       { name: "The Highcrown Road Stand", flavor: "A full company is committed to breaking the Crownless line where the road narrows before the capital gate." },
@@ -2204,10 +2254,10 @@ const RECLAIM_QUESTS = {
     { name:"Retaking the Cinder Flats", flavor:"The whole muster walks out onto the ash to break the Ash-Knight camps one by one and stand where they stood." }
   ],
   harrowgate: [
-    { name: "The Reclamation Of Harrowgate", flavor: "The whole road is walked at once, tollhouse to capital gate, to break the Crownless hold for good." },
-    { name: "Breaking The Crownless Toll", flavor: "Every tollhouse the Crownless hold is struck in a single push to open the road to the capital again." },
-    { name: "The Road To Highcrown", flavor: "A full campaign drives the length of the road to prove the capital gate can be reached without paying anyone." },
-    { name: "Retaking The Boundary Forts", flavor: "Both boundary forts are struck the same week so neither garrison can send word to the other for help." },
+    { name: "The Reclamation of Harrowgate", flavor: "The whole road is walked at once, tollhouse to capital gate, to break the Crownless hold for good." },
+    { name: "Breaking the Crownless Toll", flavor: "Every tollhouse the Crownless hold is struck in a single push to open the road to the capital again." },
+    { name: "The Road to Highcrown", flavor: "A full campaign drives the length of the road to prove the capital gate can be reached without paying anyone." },
+    { name: "Retaking the Boundary Forts", flavor: "Both boundary forts are struck the same week so neither garrison can send word to the other for help." },
     { name: "The Last Toll Broken", flavor: "The final working tollhouse on the north road is torn down stone by stone before the Crownless can rebuild it." }
   ]
 };
@@ -2266,7 +2316,7 @@ const GEAR_RAW = {
         flavor:"Commissioned for standing at hearings rather than fighting in them, though it has done both when the hearing went badly." },
       { id:"vantre-officers-plate", name:"Vantre Officer's Plate",
         flavor:"Taken from a House Vantre captain who surrendered it along with his commission rather than lose both at once." },
-      { id:"bog-iron-scale-hauberk", name:"Bog Iron Scale Hauberk",
+      { id:"bog-iron-scale-hauberk", name:"Bog-Iron Scale Hauberk",
         flavor:"Each scale hammered by hand from ore pulled out of the black water, heavier than it looks and worth every extra pound." }
     ],
     3: [
@@ -3860,6 +3910,8 @@ function keepCanAfford(id){
   });
   return { ok: Object.keys(short).length === 0, maxed:false, short: short, cost: c };
 }
+// Can it be raised right now -- what the Keep screen marks as ready.
+function keepReady(id){ return keepCanAfford(id).ok; }
 function keepUpgrade(id){
   const b = CONFIG.BUILDINGS[id];
   if (!b) return false;
@@ -5114,8 +5166,10 @@ function bestOdds(q){
   let more = null;
   const add = asked.free > q.required ? bestAddition(q, asked.party) : null;
   if (add) more = all(previewQuest(q, asked.party.concat([add])));
+  // `influence` is what success adds with that same party -- the drawer's
+  // "Banner +N" for it -- so the card and the panel cannot quote different gains.
   return { free: asked.free, short: Math.max(0, q.required - asked.free),
-           chance: all(now), more: more, stages: stages };
+           chance: all(now), more: more, stages: stages, influence: now.influence };
 }
 
 /* Preview shown in the deploy drawer. Pure -- the same numbers the resolver
@@ -6392,6 +6446,30 @@ let renounceArm = null;   // { id, at }: an Oath one press away from being renou
 function renounceArmed(id){
   return !!renounceArm && renounceArm.id === id && nowMs() - renounceArm.at < CONFIG_UI.renounceArmMs;
 }
+let resLegend = false;      // the header's stores named under their numbers
+let hurtTipOpen = false;    // the hurt-risk explainer unfolded after it has folded away
+
+/* The player's screen preferences: not game state, so not in the save. A
+   succession builds a new save, and a compact roster should not reset with it.
+   Written through the disarm switch like every other write, so no check can
+   change what the player chose. */
+let uiPrefs = blankUiPrefs();
+function blankUiPrefs(){ return { compactRoster: false, hurtTipSeen: 0 }; }
+function loadUiPrefs(){
+  const p = blankUiPrefs();
+  try {
+    const raw = JSON.parse(storageGetKey(CONFIG.UI_PREFS_KEY) || "null");
+    if (raw && typeof raw === "object"){
+      p.compactRoster = raw.compactRoster === true;
+      p.hurtTipSeen = Math.max(0, Math.floor(Number(raw.hurtTipSeen) || 0));
+    }
+  } catch (e) {}
+  return p;
+}
+function saveUiPrefs(){
+  if (savesDisarmed) return false;
+  return storageSetKey(CONFIG.UI_PREFS_KEY, JSON.stringify(uiPrefs));
+}
 
 const $  = sel => document.querySelector(sel);
 const el = (tag, cls, html) => {
@@ -6448,6 +6526,7 @@ function setView(v){
   succDraft = null;       // a half-made succession is a drill-down like any other
   renounceArm = null;     // and so is a renounce waiting for its second press
   render();               // which shows the tab -- see syncView()
+  scrollTo(0, 0);         // the TOP screen, even when it is the tab you were on
 }
 const VIEWS = ["map","roster","keep","highcrown"];
 
@@ -6472,15 +6551,24 @@ function syncView(){
    so nothing a check drew can surface later, and rendering the one that is. */
 function screenSnapshot(){
   return { view: currentView, zone: openZone, hero: openHero, quest: selectedQuest,
-           picked: [...picked], levy: [...levyPick], draft: succDraft, renounce: renounceArm };
+           picked: [...picked], levy: [...levyPick], draft: succDraft, renounce: renounceArm,
+           scroll: scrollY, memo: Object.assign({}, pageScroll),
+           prefs: Object.assign({}, uiPrefs), legend: resLegend, tip: hurtTipOpen };
 }
 function restoreScreen(s, sweep){
   currentView = s.view; openZone = s.zone; openHero = s.hero; selectedQuest = s.quest;
   picked.clear();   s.picked.forEach(id => picked.add(id));
   levyPick.clear(); s.levy.forEach(id => levyPick.add(id));
   succDraft = s.draft; renounceArm = s.renounce;
+  // A check that opened a job counted a tip as read; one that toggled the
+  // roster flipped a preference. Neither was the player.
+  uiPrefs = Object.assign(blankUiPrefs(), s.prefs); resLegend = s.legend; hurtTipOpen = s.tip;
   if (sweep) VIEWS.forEach(n => { if (n !== currentView) $("#v-" + n).innerHTML = ""; });
   render();
+  // And where the player had scrolled to, which every page a check drew moved.
+  Object.keys(pageScroll).forEach(k => { delete pageScroll[k]; });
+  Object.assign(pageScroll, s.memo);
+  scrollTo(0, s.scroll);
 }
 function screenProblem(s){
   if (currentView !== s.view) return "the game was left on " + currentView + ", not " + s.view;
@@ -6490,7 +6578,11 @@ function screenProblem(s){
   if (shown.join() !== s.view)
     return "the screen shows " + (shown.join(" and ") || "nothing") + " while the game is on " + s.view;
   const left = VIEWS.filter(n => n !== s.view && $("#v-" + n).childNodes.length);
-  return left.length ? "a page off screen still holds what a check drew on it: " + left.join(", ") : null;
+  if (left.length) return "a page off screen still holds what a check drew on it: " + left.join(", ");
+  // A check that opens a job counts a tip as read; one more each boot would
+  // fold the explainer for a player who never opened anything.
+  return JSON.stringify(uiPrefs) === JSON.stringify(Object.assign(blankUiPrefs(), s.prefs)) ? null
+    : "the suite left the player's screen preferences changed";
 }
 
 /* ---------------------------------------------------------- header ------- */
@@ -6502,20 +6594,41 @@ function renderHeader(){
   const dep  = state.heroes.filter(h => h.status === "deployed").length;
   const inj  = state.heroes.filter(h => h.injury.severity).length;
 
-  let h = '<span class="r on">' + icon("sym-gold", 13, "var(--gold)") +
-          '<b class="num">' + state.gold + '</b></span>';
-  h += '<span class="r ' + (state.charters ? "on" : "off") + '">' +
-       icon("sym-charter", 13, "var(--ink)") + '<b class="num">' + state.charters + '</b></span>';
-  Object.keys(CONFIG.MATERIALS).forEach(m => {
-    const md = CONFIG.MATERIALS[m], v = state.materials[m];
-    h += '<span class="r ' + (v ? "on" : "off") + '" title="' + md.name + '">' +
-         icon(md.sym, 13, md.color) + '<b class="num">' + v + '</b></span>';
+  /* The stores, as ONE button: tap it and every number is named. Icons were
+     named only by a hover tooltip, which a phone does not have, and gold and
+     Charters had none at all. The names are always there for a screen reader. */
+  const item = (sym, color, v, name, on) => '<span class="r ' + (on ? "on" : "off") +
+    '" title="' + name + '">' + icon(sym, 13, color) + '<b class="num">' + v + '</b>' +
+    (resLegend ? '<span class="rn">' + name.toLowerCase() + '</span>'
+               : '<span class="sr"> ' + name.toLowerCase() + '</span>') + '</span>';
+  let h = '<button class="resbtn" id="resbtn" aria-expanded="' + resLegend + '">' +
+    item("sym-gold", "var(--gold)", state.gold, "Gold", true) +
+    item("sym-charter", "var(--ink)", state.charters, "Charters", state.charters > 0);
+  storesShown().forEach(m => {
+    const md = CONFIG.MATERIALS[m], v = state.materials[m] || 0;
+    h += item(md.sym, md.color, v, md.name, v > 0);
   });
-  h += '<span class="hstat">' +
+  h += '</button><span class="hstat">' +
        '<span class="idle">idle <i>' + idle + '</i></span>' +
        '<span class="dep">out <i>' + dep + '</i></span>' +
        '<span class="inj">hurt <i>' + inj + '</i></span></span>';
-  $("#res").innerHTML = h;
+  // Rebuilt only when it changed: this runs every second on the map, and a
+  // button rebuilt every second loses keyboard focus every second.
+  const res = $("#res");
+  if (res._html === h) return;
+  const focused = document.activeElement && document.activeElement.id === "resbtn";
+  res.innerHTML = h; res._html = h;
+  $("#resbtn").onclick = () => { resLegend = !resLegend; renderHeader(); };
+  if (focused) $("#resbtn").focus();
+}
+
+/* A material appears in the header once the ground it comes from is open, or
+   once the Keep holds some. Kingsbone sat there at 0 from day one, naming a
+   region the game keeps secret until the endgame -- the same spoiler the danger
+   pips once gave away. */
+function storesShown(){
+  return Object.keys(CONFIG.MATERIALS).filter(m => (state.materials[m] || 0) > 0 ||
+    openZones().some(z => zoneDef(z.id).material === m));
 }
 
 /* ------------------------------------------------------------- map ------- */
@@ -6884,15 +6997,18 @@ function influenceBars(zs){
   const floorPct = zs.influenceFloor > 0
     ? '<span class="flr" style="left:' + zs.influenceFloor + '%"></span>' : '';
   const decay = decayPerDay(zs);
+  // The next tier by NAME. "72 / 80" never said what 80 was.
+  const ahead = next !== null
+    ? '<span class="nexttier">' + CONFIG.TIERS[ti + 1].name + ' at ' + next + '</span>'
+    : '<span class="nexttier">the highest standing there is</span>';
   return '' +
     '<div class="barrow"><span class="lab">Banner</span>' +
       '<span class="bar inf"><i style="width:' + zs.influence + '%"></i>' + floorPct + '</span>' +
-      '<span class="val num">' + Math.round(zs.influence) +
-        (next ? ' / ' + next : '') + '</span></div>' +
+      '<span class="val num">' + Math.round(zs.influence) + '</span></div>' +
     '<div class="barrow"><span class="lab">Rival</span>' +
       '<span class="bar riv"><i style="width:' + zs.rival + '%"></i></span>' +
       '<span class="val num">' + Math.round(zs.rival) + '</span></div>' +
-    '<div class="tiny dim">Decay ' + round1(decay) + ' / day' +
+    '<div class="tiny dim">' + ahead + ' · Decay ' + round1(decay) + ' / day' +
       (decay === 0 ? ' · nothing to lose yet' : '') + '</div>';
 }
 
@@ -6905,7 +7021,7 @@ function renderZonePanel(v){
 
   const back = el("button", "btn sm", "← The Realm");
   back.style.marginBottom = "10px";
-  back.onclick = () => { openZone = null; selectedQuest = null; picked.clear(); render(); };
+  back.onclick = () => { openZone = null; selectedQuest = null; picked.clear(); scrollBack = true; render(); };
   v.appendChild(back);
 
   const head = el("div", "card");
@@ -6928,52 +7044,27 @@ function renderZonePanel(v){
     (locked
       ? '<div class="tiny bad" style="margin-top:6px">' + icon("sym-warn", 11) +
         ' ' + zd.rivalName + ' hold the ground. Work here is harder, more dangerous ' +
-        'and pays half — but it is never closed to you.</div>' : '');
+        'and pays half — but it is never closed to you.</div>' : '') +
+    // The live event sits in the region's own card: it changes what the jobs
+    // below pay and cost, so it is read with them rather than a card away.
+    zoneEventHTML(zs);
   v.appendChild(head);
 
-  // The live event, and the Charter that turns this zone's standing into a ratchet.
-  const ev = zoneEvent(zs);
-  const evId = (zs.event && zs.event.type) || "quiet";
+  /* The Charter that turns this zone's standing into a ratchet. Full, and ABOVE
+     the jobs, only when there is something to do with it; otherwise one line
+     below them. It used to sit between the region and its jobs in every state,
+     so on a phone the slate began a screen and a half down, behind a card that
+     most of the time said "No Charter". */
   const con = canConsolidate(zs);
-  const card = el("div", "card");
-  let ch = '<div class="evrow"><span class="ev e-' + evId + '">' + ev.name + '</span>' +
-    '<span class="tiny dim" style="margin-left:auto">turns in <b class="num" data-until="' +
-    ((zs.event && zs.event.expires) || 0) + '">' +
-    fmtDur(((zs.event && zs.event.expires) || 0) - nowMs()) + '</b></span></div>' +
-    '<div class="tiny muted" style="margin:4px 0 8px">' + ev.blurb + '</div>';
-
-  ch += '<div class="tiny" style="border-top:1px solid var(--line);padding-top:8px">' +
-    (zs.influenceFloor > 0
-      ? '<span class="good">' + icon("sym-charter", 11, "var(--verd)") +
-        ' Consolidated at <b>' + Math.round(zs.influenceFloor) +
-        '</b> — standing here can never fall below it.</span>'
-      : '<span class="dim">Nothing here is held permanently yet.</span>') + '</div>';
-  if (con.target > (zs.influenceFloor || 0)){
-    ch += '<div class="tiny muted" style="margin:6px 0 7px">A Charter would lock the floor at <b>' +
-      con.target + '</b> (' + CONFIG.TIERS[tierIndexFor(zs.influence)].name +
-      '). Decay above it continues; below it, nothing can be taken back.</div>' +
-      '<button class="btn sm ' + (con.ok ? "pri" : "") + '" id="consolidate"' +
-      (con.ok ? "" : " disabled") + '>' +
-      icon("sym-charter", 12, con.ok ? "#1a1408" : "var(--dim)") +
-      ' Consolidate · ' + CONFIG.CONSOLIDATE_CHARTER_COST + '</button>' +
-      (con.why === "charters"
-        ? '<div class="tiny warn" style="margin-top:5px">No Charter. They come from Warfronts.</div>'
-        : con.why === "oath"
-        ? '<div class="tiny warn" style="margin-top:5px">Sworn off: ' +
-          escHTML(nameList(oathsSworn().filter(id => CONFIG.OATHS[id].noConsolidation).map(oathName))) +
-          '. Renounce it at the Keep to consolidate again.</div>' : '');
-  } else if (zs.influenceFloor > 0 && tierIndexFor(zs.influence) >= TIER_COUNT - 1){
-    ch += '<div class="tiny dim" style="margin-top:6px">Nothing further to consolidate here.</div>';
-  }
-  card.innerHTML = ch;
-  v.appendChild(card);
-  const cbtn = card.querySelector("#consolidate");
+  const charter = el("div", "card charter" + (con.ok ? " act" : " quiet"), charterHTML(zs, con));
+  const cbtn = charter.querySelector("#consolidate");
   if (cbtn) cbtn.onclick = () => {
     if (consolidate(zs)){
       toast(zd.name + " consolidated at " + Math.round(zs.influenceFloor));
       render();
     }
   };
+  if (con.ok) v.appendChild(charter);
 
   // active quests here
   const act = state.activeQuests.filter(q => q.zoneId === zs.id);
@@ -7036,7 +7127,9 @@ function renderZonePanel(v){
             (odds.stages > 1 ? ' <span class="dim">all ' + odds.stages + ' stages</span>' : '')) +
         (odds.more !== null && odds.more > odds.chance + 0.005
           ? ' <span class="dim">·</span> <span class="' + oddsCls(odds.more) + '">' +
-            pct(odds.more) + '</span> <span class="dim">with one more</span>' : '')) +
+            pct(odds.more) + '</span> <span class="dim">with one more</span>' : '') +
+        // Standing is the game's main currency and the card quoted only coin.
+        '<span class="qgain"><b class="good">+' + round1(odds.influence) + '</b> banner</span>') +
       '</div>';
     if (q.incursion) node.classList.add("raid");
     node.innerHTML =
@@ -7076,12 +7169,65 @@ function renderZonePanel(v){
       // on an untrue assumption about the markup.
       selectedQuest = sel ? null : q.id;
       picked.clear();
+      if (!sel) noteJobOpened();
       render();
+      // Opening a job brings it to the top of the screen, with its send panel
+      // under it. It used to open below the bottom edge of a phone, so the tap
+      // looked like it had done nothing.
+      if (!sel) bringToTop($("#v-map .quest.sel"));
     });
     node.setAttribute("aria-expanded", String(sel));
     v.appendChild(node);
     if (sel) v.appendChild(renderDrawer(q));
   });
+  if (!con.ok) v.appendChild(charter);
+}
+
+function zoneEventHTML(zs){
+  const ev = zoneEvent(zs);
+  const evId = (zs.event && zs.event.type) || "quiet";
+  const until = (zs.event && zs.event.expires) || 0;
+  return '<div class="zev"><div class="evrow"><span class="ev e-' + evId + '">' + ev.name + '</span>' +
+    '<span class="tiny dim" style="margin-left:auto">turns in <b class="num" data-until="' + until + '">' +
+    fmtDur(until - nowMs()) + '</b></span></div>' +
+    '<div class="tiny muted" style="margin-top:4px">' + ev.blurb + '</div></div>';
+}
+
+/* What the Charter card says. When it cannot be used, ONE line: what is held,
+   and what would be. */
+function charterHTML(zs, con){
+  const floor = zs.influenceFloor || 0;
+  const held = floor > 0
+    ? '<span class="good">' + icon("sym-charter", 11, "var(--verd)") +
+      ' Consolidated at <b>' + Math.round(floor) + '</b> — standing here can never fall below it.</span>'
+    : '<span class="dim">Nothing here is held permanently yet.</span>';
+  const could = con.target > floor;
+  const tierNow = CONFIG.TIERS[tierIndexFor(zs.influence)].name;
+  if (con.ok)
+    return '<div class="tiny">' + held + '</div>' +
+      '<div class="tiny muted" style="margin:6px 0 7px">A Charter would lock the floor at <b>' +
+      con.target + '</b> (' + tierNow + '). Decay above it continues; below it, nothing can be ' +
+      'taken back.</div>' +
+      '<button class="btn sm pri" id="consolidate">' + icon("sym-charter", 12, "#1a1408") +
+      ' Consolidate · ' + CONFIG.CONSOLIDATE_CHARTER_COST + '</button>';
+  if (could && con.why === "oath")
+    return '<div class="tiny">' + held + ' <span class="warn">Sworn off Charters: ' +
+      escHTML(nameList(oathsSworn().filter(id => CONFIG.OATHS[id].noConsolidation).map(oathName))) +
+      '. Renounce it at the Keep to consolidate again.</span></div>';
+  if (could)
+    return '<div class="tiny">' + held + ' <span class="dim">A Charter would lock it at <b>' +
+      con.target + '</b> (' + tierNow + ') — they come from Warfronts.</span></div>';
+  if (floor > 0 && tierIndexFor(zs.influence) >= TIER_COUNT - 1)
+    return '<div class="tiny">' + held + ' <span class="dim">Nothing further to consolidate.</span></div>';
+  return '<div class="tiny">' + held + '</div>';
+}
+
+/* Put a node at the top of the screen, just under the sticky header. */
+function bringToTop(node){
+  if (!node) return;
+  const header = $("header");
+  const top = node.getBoundingClientRect().top + scrollY - (header ? header.offsetHeight : 0) - 8;
+  scrollTo(0, Math.max(0, top));
 }
 
 /* ----------------------------------------------------- deploy drawer ----- */
@@ -7110,11 +7256,14 @@ function renderDrawer(q){
     '<div class="tiny dim" style="margin:-3px 0 7px">' +
       CONFIG.QUEST_TYPES[q.type].blurb + '</div>';
   // Rank by the stat this quest actually tests, so the right specialist is the
-  // one at the top of the list rather than whoever happens to hit hardest.
-  const ordered = state.heroes.slice().sort((a, b) =>
-    heroStat(b, statId, ctx) - heroStat(a, statId, ctx));
+  // one at the top of the list rather than whoever happens to hit hardest --
+  // among the heroes who can GO. Ranked all together, the strongest were often
+  // the ones away or the Elder, and the first rows on a phone were greyed out.
+  const ordered = drawerOrder(q, ctx);
+  let shownAway = false;
   ordered.forEach(hero => {
     const busy = !isAvailable(hero);
+    if (busy && !shownAway){ h += '<div class="hgroup">Not free</div>'; shownAway = true; }
     const inj = injuryDef(hero.injury.severity);
     // The BRANCH name, not the base class. The roster has always shown "Knight";
     // this screen said "Warrior", which is the wrong word on the one page where
@@ -7125,7 +7274,10 @@ function renderDrawer(q){
     // decides who has earned a rest, and a wounded hero reading in the same
     // grey as everyone else is the reason they get sent out again.
     let noteCls = "";
-    if (busy) note = "in the field";
+    // Where they actually are, in the roster's own words. Every unavailable
+    // hero used to read "in the field" -- the Elder, who never leaves the Keep,
+    // and anyone serving a Levy at Highcrown included.
+    if (busy) note = heroStatusLine(hero, { bar: false }).html;
     else if (inj){
       const sevs = CONFIG.INJURY_SEVERITIES;
       const canWorsen = sevs.findIndex(s => s.id === inj.id) < sevs.length - 1;
@@ -7171,9 +7323,7 @@ function renderDrawer(q){
   });
 
   if (pv){
-    const chanceCls = pv.chance >= 0.7 ? "good" : pv.chance >= 0.45 ? "warn" : "bad";
-    const hurtCls   = pv.expectedHurt <= 0.10 ? "good"
-                    : pv.expectedHurt <= 0.25 ? "warn" : "bad";
+    const chanceCls = chanceClass(pv.chance), hurtCls = hurtClass(pv.expectedHurt);
     h += '<div class="readout">' +
       '<div><span>Party ' + statName.toLowerCase() + '</span><b>' + round1(pv.power) + '</b></div>' +
       '<div><span>Difficulty</span><b>' + round1(pv.diff) + '</b></div>' +
@@ -7184,7 +7334,10 @@ function renderDrawer(q){
       // is the opposite -- overstaffing lowers both figures. The two numbers are
       // the expected risk and the worst branch, so they are labelled as such
       // and the arrow is gone.
-      '<div><span>Hurt risk</span><b class="' + hurtCls + '">' + pct(pv.expectedHurt) +
+      '<div><span>Hurt risk' + (hurtTipFolded(pv)
+          ? ' <button class="tipq" id="hurttip" aria-expanded="' + hurtTipOpen + '" ' +
+            'aria-label="What hurt risk means">?</button>' : '') + '</span>' +
+        '<b class="' + hurtCls + '">' + pct(pv.expectedHurt) +
         (pv.worst > pv.expectedHurt + 0.02
           ? ' <span class="dim">· up to ' + pct(pv.worst) + '</span>' : '') + '</b></div>' +
       '<div><span>Time</span><b>' + fmtDurLong(pv.duration) + '</b></div>' +
@@ -7196,8 +7349,8 @@ function renderDrawer(q){
         'turning back partway still pays for what was cleared. Clearing every stage: <b>' +
         pct(Math.pow(pv.chance, pv.stages)) + '</b>. Every stage entered is another ' +
         'chance to be hurt, which is why the risk above is what it is.</div>';
-    if (pv.worst > pv.expectedHurt + 0.02)
-      h += '<div class="tiny dim" style="margin:-3px 0 7px">Hurt risk is what the ' +
+    if (pv.worst > pv.expectedHurt + 0.02 && (!hurtTipFolded(pv) || hurtTipOpen))
+      h += '<div class="tiny dim hurttip" style="margin:-3px 0 7px">Hurt risk is what the ' +
         'most exposed hero can expect. <b>Up to</b> is the worst way this can go, ' +
         'not what it becomes — sending more heroes lowers both.</div>';
     if (pv.counter !== 1)
@@ -7252,11 +7405,8 @@ function renderDrawer(q){
             pct(pm.expectedHurt) + '.</div>';
       }
     }
-  } else {
-    h += '<div class="tiny dim" style="margin:9px 0">Choose heroes to see the odds.</div>';
   }
-  h += '<button class="btn pri" id="go"' + (chosen.length ? "" : " disabled") + '>' +
-       'Send ' + (chosen.length || "") + '</button>';
+  h += sendBarHTML(pv, chosen.length);
   d.innerHTML = h;
 
   d.querySelectorAll(".hpick[data-h]").forEach(row => {
@@ -7279,6 +7429,8 @@ function renderDrawer(q){
     });
     row.setAttribute("aria-pressed", String(picked.has(id)));
   });
+  const tip = d.querySelector("#hurttip");
+  if (tip) tip.onclick = () => { hurtTipOpen = !hurtTipOpen; render(); };
   d.querySelector("#go").onclick = () => {
     const heroes = state.heroes.filter(x => picked.has(x.id) && isAvailable(x));
     if (!heroes.length) return;
@@ -7288,6 +7440,46 @@ function renderDrawer(q){
     render();
   };
   return d;
+}
+
+/* The explainer under the hurt risk -- what "up to" means -- is read in full
+   on the first few jobs opened, then folds behind a "?" beside the figure. It
+   was a paragraph on every send panel forever. Only where it applies: when
+   the worst case and the expected one differ enough to need explaining. */
+// A job opened is a hurt-risk explainer read, counted up to the point it folds.
+function noteJobOpened(){
+  if (uiPrefs.hurtTipSeen <= CONFIG_UI.hurtTipShows){ uiPrefs.hurtTipSeen++; saveUiPrefs(); }
+}
+function hurtTipFolded(pv){
+  return pv.worst > pv.expectedHurt + 0.02 && uiPrefs.hurtTipSeen > CONFIG_UI.hurtTipShows;
+}
+
+/* Who is listed first: everyone who can go, best at THIS job first; then
+   everyone who cannot, in the same order, under their own heading. */
+function drawerOrder(q, ctx){
+  const statId = q.stat || "power";
+  return state.heroes.slice().sort((a, b) =>
+    (Number(isAvailable(b)) - Number(isAvailable(a))) ||
+    (heroStat(b, statId, ctx) - heroStat(a, statId, ctx)));
+}
+
+function chanceClass(c){ return c >= 0.7 ? "good" : c >= 0.45 ? "warn" : "bad"; }
+function hurtClass(r){ return r <= 0.10 ? "good" : r <= 0.25 ? "warn" : "bad"; }
+
+/* The send bar: the three numbers that decide a send, and the Send button,
+   pinned just above the nav while the send panel is on screen (position:
+   sticky inside the drawer). They sat below the whole hero list: pick near the
+   top, scroll down to read the odds, scroll back up to change your mind --
+   the core loop of the game, done dozens of times a day. The full readout
+   stays where it was; this is the same figures, read from the same preview. */
+function sendBarHTML(pv, n){
+  const odds = !pv ? '<span class="dim">Choose heroes to see the odds.</span>'
+    : '<b class="' + chanceClass(pv.chance) + '">' + pct(pv.chance) + '</b> ' +
+      (pv.stages > 1 ? "a stage" : "success") +
+      ' · hurt <b class="' + hurtClass(pv.expectedHurt) + '">' + pct(pv.expectedHurt) + '</b>' +
+      ' · <b class="good">+' + round1(pv.influence) + '</b> banner';
+  return '<div class="sendbar' + (n ? " pinned" : "") + '"><span class="sb">' + odds + '</span>' +
+    '<button class="btn pri" id="go"' + (n ? "" : " disabled") + '>Send ' + (n || "") + '</button></div>';
 }
 
 /* ----------------------------------------------------------- roster ------ */
@@ -7357,7 +7549,7 @@ function nextMoment(){
              CONFIG_UI.momentHoldMs + 500);
 }
 // Presentation timings, not balance: nothing in the game's arithmetic reads them.
-const CONFIG_UI = { momentHoldMs: 4200, renounceArmMs: 8000 };
+const CONFIG_UI = { momentHoldMs: 4200, renounceArmMs: 8000, hurtTipShows: 3 };
 
 /* One portrait, used by every screen that shows a face, so a hero looks the
    same on the roster, in their own page and as a recruit. It was a 24-pixel
@@ -7393,7 +7585,10 @@ function portraitHTML(h, size){
     '</span>';
 }
 
-function heroStatusLine(h){
+/* `bar: false` drops the progress bar for screens with no room for one -- the
+   send panel's "Not free" rows -- so the words stay the roster's own. */
+function heroStatusLine(h, opts){
+  const bar = !(opts && opts.bar === false);
   if (h.status === "elder")
     return { cls:"dim", html:"Elder · teaches the resting <b>" + CONFIG.SUCCESSION.ELDER_XP_PER_HOUR +
       " XP</b> an hour" };
@@ -7410,8 +7605,8 @@ function heroStatusLine(h){
     return { cls:"warn", html:
       'back in <span class="num" data-until="' + aq.completesAt + '">' +
       fmtDur(aq.completesAt - nowMs()) + '</span>' +
-      '<span class="mini out"><i style="width:' + round1(done) + '%" data-prog="' +
-      aq.startedAt + ',' + aq.completesAt + '"></i></span>' };
+      (bar ? '<span class="mini out"><i style="width:' + round1(done) + '%" data-prog="' +
+      aq.startedAt + ',' + aq.completesAt + '"></i></span>' : "") };
   }
   // Away on a Levy. Given the same progress bar as a quest deliberately: to the
   // player this is the identical problem -- a hero who is not here and a clock
@@ -7425,8 +7620,8 @@ function heroStatusLine(h){
     return { cls:"warn", html:
       'at Highcrown, back in <span class="num" data-until="' + h.levyUntil + '">' +
       fmtDur((h.levyUntil || 0) - nowMs()) + '</span>' +
-      '<span class="mini out"><i style="width:' + round1(done) + '%" data-prog="' +
-      from + ',' + (h.levyUntil || nowMs()) + '"></i></span>' };
+      (bar ? '<span class="mini out"><i style="width:' + round1(done) + '%" data-prog="' +
+      from + ',' + (h.levyUntil || nowMs()) + '"></i></span>' : "") };
   }
   // Shaded by severity, the same three colours the deploy drawer uses. One flat
   // red for every wound made the roster say "hurt" but never "how badly", which
@@ -7440,13 +7635,32 @@ function heroStatusLine(h){
 function renderRoster(){
   const v = $("#v-roster");
   if (openHero){ renderHeroDetail(v); return; }
-  v.innerHTML = '<h2>The Roster</h2>' +
+  // Compact: one line a hero. Seven full cards were four phone screens.
+  const compact = uiPrefs.compactRoster;
+  v.innerHTML = '<div class="rhead"><h2>The Roster</h2>' +
+    '<button class="btn sm" id="rostermode" aria-pressed="' + compact + '">' +
+      (compact ? "Full cards" : "Compact") + '</button></div>' +
     '<div class="tiny dim" style="margin:-4px 0 10px">' + state.heroes.length + ' of ' +
     rosterCap() + ' · tap anyone for their history</div>';
+  v.querySelector("#rostermode").onclick = () => {
+    uiPrefs.compactRoster = !uiPrefs.compactRoster; saveUiPrefs(); render();
+  };
 
   // §9: named heroes appear as recruits only when their zone hits Honored.
+  // When none of them can be taken on, the offer is news rather than a choice,
+  // and it goes below the roster in a line rather than holding the top of it.
   const offers = recruitOffers();
-  if (offers.length){
+  const offerNow = offers.some(d => canRecruit(d).ok);
+  let waitNote = null;
+  if (offers.length && !offerNow){
+    waitNote = el("div", "card offerwait");
+    waitNote.innerHTML = '<div class="tiny"><b style="color:var(--t4)">Word has reached the Keep</b> — ' +
+      nameList(offers.map(d => d.name + ' <span class="dim">(' + d.cls + ')</span>')) +
+      ' would ride for the Keep' +
+      (offers.some(d => canRecruit(d).why === "room") ? ', but there is no bed — raise the Great Hall.' : '.') +
+      '</div>';
+  }
+  if (offers.length && offerNow){
     const rc = el("div", "card");
     let rh = '<h3 style="color:var(--t4)">Word has reached the Keep</h3>' +
       '<div class="tiny muted" style="margin-bottom:8px">Standing in a zone is how ' +
@@ -7487,9 +7701,22 @@ function renderRoster(){
   state.heroes.forEach(h => {
     const inj = injuryDef(h.injury.severity);
     const st = heroStatusLine(h);
-    const card = el("div", "hero");
+    const card = el("div", "hero" + (compact ? " compact" : ""));
     card.setAttribute("role", "button");
     card.tabIndex = 0;
+    if (compact){
+      // Who, what, and where: the face still carries the wound and the Marks.
+      card.innerHTML = portraitHTML(h, "small") +
+        '<span class="body"><b>' + h.name + '</b>' +
+          '<span class="role">' + branchName(h) + ' · Level ' + h.level +
+          (awaitingSubclass(h) || awaitingTier3(h) ? ' <span class="branchdot">ready to branch</span>' : '') +
+          (h.fatigue > 0 ? ' · fatigue ' + Math.round(h.fatigue) : '') + '</span></span>' +
+        '<span class="st ' + st.cls + '">' + st.html + '</span>';
+      activatable(card, h.name + ", " + branchName(h) + ", level " + h.level,
+        () => { openHero = h.id; render(); });
+      v.appendChild(card);
+      return;
+    }
     card.innerHTML =
       portraitHTML(h) +
       '<span class="body"><b>' + h.name + '</b>' +
@@ -7526,6 +7753,7 @@ function renderRoster(){
       ", level " + h.level, () => { openHero = h.id; render(); });
     v.appendChild(card);
   });
+  if (waitNote) v.appendChild(waitNote);
 }
 
 /* ------------------------------------------------------- hero detail ----- */
@@ -7548,7 +7776,7 @@ function renderHeroDetail(v){
 
   const back = el("button", "btn sm", "← The Roster");
   back.style.marginBottom = "10px";
-  back.onclick = () => { openHero = null; render(); };
+  back.onclick = () => { openHero = null; scrollBack = true; render(); };
   v.appendChild(back);
 
   // Scale to the hero's own best attribute, never below 10. Hardcoding 10 meant
@@ -8330,13 +8558,15 @@ function renderSuccession(v){
 function renderKeep(){
   const v = $("#v-keep");
   const held = zonesHeld();
-  let h = '<h2>The Keep</h2>' + (reignNo() > 1
+  const title = '<h2>The Keep</h2>' + (reignNo() > 1
     ? '<div class="tiny dim" style="margin:-4px 0 10px">The ' + reignOrdinal(reignNo()) + ' Reign</div>'
     : '');
+  let h = "";
 
-  // The Oaths this reign lives under, first: they change what every other
-  // number on this page means. Renouncing takes two presses because it cannot
-  // be taken back -- the second press is where the price is spelled out.
+  // The Oaths this reign lives under. Renouncing takes two presses because it
+  // cannot be taken back -- the second press is where the price is spelled out.
+  // Every number an Oath changes already says so where it is printed, so the
+  // card itself no longer needs to lead the page.
   const L = legacyOf();
   if (L.oaths.length || L.broken.length){
     h += '<div class="card oaths"><h3>Oaths Sworn</h3>' +
@@ -8357,6 +8587,7 @@ function renderKeep(){
         escHTML(nameList(L.broken.map(oathName))) + '.</div>';
     h += '</div>';
   }
+  const oathsH = h; h = "";
 
   if (state.won)
     h += '<div class="card wonbanner"><h3 style="color:var(--t4)">Highcrown Sent Word</h3>' +
@@ -8391,6 +8622,7 @@ function renderKeep(){
   h += '<div class="tiny" style="border-top:1px solid var(--line);margin-top:6px;padding-top:6px;' +
     'display:flex"><span style="flex:1">Total upkeep</span><b class="num ' +
     (totalDecay > 0 ? "warn" : "dim") + '">' + round1(totalDecay) + ' influence / day</b></div></div>';
+  const realmH = h; h = "";
 
   // The Forge's own shelf. It lives on the Keep screen rather than the roster
   // because salvage and reforging are things done to the Keep's holdings, not
@@ -8426,50 +8658,62 @@ function renderKeep(){
     }
     h += '</div>';
   }
+  const shelfH = h; h = "";
 
-  h += '<h3 style="margin-top:12px">Buildings</h3>';
+  /* The buildings, compact. The page was about five phone screens tall with the
+     buildings starting a screen down, each card a paragraph of description the
+     tutorial already gives. The description shows only on a building not yet
+     built -- once it stands, its effect line says what it does -- and the cost
+     and the Build button share a row. A building that can be raised right now
+     is marked, so it can be found without reading every cost. */
+  const ready = Object.keys(CONFIG.BUILDINGS).filter(id => keepReady(id));
+  h += '<h3 style="margin-top:4px">Buildings' + (ready.length
+    ? ' <span class="readycount">· ' + ready.length + ' ready to build</span>' : '') + '</h3>';
   Object.keys(CONFIG.BUILDINGS).forEach(id => {
     const b = CONFIG.BUILDINGS[id];
     const lv = keepLevel(id);
     const a = keepCanAfford(id);
-    h += '<div class="card build" data-b="' + id + '">' +
+    const can = keepReady(id);
+    h += '<div class="card build' + (can ? " can" : "") + '" data-b="' + id + '">' +
       '<div class="zhead"><h2 style="font-size:14.5px">' + b.name + '</h2>' +
         '<span class="lvl">' + (lv === 0 ? "Not built" : "Level " + lv) +
         (lv >= b.max ? " · complete" : "") + '</span></div>' +
-      '<div class="tiny muted" style="margin-bottom:6px">' + b.blurb + '</div>' +
+      (lv === 0 ? '<div class="tiny muted" style="margin-bottom:6px">' + b.blurb + '</div>' : '') +
       '<div class="pips lvlpips">' +
         Array.from({ length: b.max }, (_, i) =>
           '<i class="' + (i < lv ? "on" : "") + '"></i>').join("") + '</div>' +
-      '<div class="tiny" style="margin:6px 0 2px">' + keepEffectText(id, lv) + '</div>';
+      // Not built, the current effect is only "nothing" said at length; the
+      // description above and the Next line below say what it would do.
+      (lv > 0 ? '<div class="tiny" style="margin:6px 0 2px">' + keepEffectText(id, lv) + '</div>' : '');
 
     if (a.maxed){
       h += '<div class="tiny good" style="margin-top:6px">Nothing further to build here.</div>';
     } else {
-      h += '<div class="tiny dim" style="margin:7px 0 3px">Next: ' + keepEffectText(id, lv + 1) + '</div>' +
-        '<div class="costrow">' +
-          '<span class="cost' + (a.short.gold ? " short" : "") + '">' +
-            icon("sym-gold", 12, "var(--gold)") + ' ' + a.cost.gold + '</span>' +
+      // What is short says by how much, beside the price, rather than on a line
+      // of its own repeating what the red already said.
+      const cost = (k, sym, color, n, name) => '<span class="cost' + (a.short[k] ? " short" : "") +
+        '" title="' + name + '">' + icon(sym, 12, color) + ' ' + n +
+        '<span class="sr"> ' + name.toLowerCase() + '</span>' +
+        (a.short[k] ? ' <i class="gap">−' + a.short[k] + '<span class="sr"> short</span></i>' : '') + '</span>';
+      h += '<div class="tiny dim" style="margin:5px 0 0">Next: ' + keepEffectText(id, lv + 1) + '</div>' +
+        '<div class="buyrow"><div class="costrow">' +
+          cost("gold", "sym-gold", "var(--gold)", a.cost.gold, "Gold") +
           Object.keys(a.cost.materials).map(m => {
             const md = CONFIG.MATERIALS[m];
-            return '<span class="cost' + (a.short[m] ? " short" : "") + '">' +
-              icon(md.sym, 12, md.color) + ' ' + a.cost.materials[m] + '</span>';
+            return cost(m, md.sym, md.color, a.cost.materials[m], md.name);
           }).join("") +
-        '</div>';
-      if (!a.ok){
-        const need = Object.keys(a.short).map(k =>
-          a.short[k] + " " + (k === "gold" ? "gold" : CONFIG.MATERIALS[k].name.toLowerCase()));
-        h += '<div class="tiny warn" style="margin-bottom:6px">Short ' + need.join(", ") + '.</div>';
-      }
-      h += '<button class="btn sm ' + (a.ok ? "pri" : "") + '" data-up="' + id + '"' +
-        (a.ok ? "" : " disabled") + '>Build</button>';
+        '</div>' +
+        '<button class="btn sm ' + (a.ok ? "pri" : "") + '" data-up="' + id + '"' +
+          (a.ok ? "" : " disabled") + '>Build</button></div>';
     }
     h += '</div>';
   });
 
-  h += '<div class="tiny dim" style="margin-top:4px">A first level needs materials from ' +
+  h += '<div class="tiny dim" style="margin:4px 0 12px">A first level needs materials from ' +
     CONFIG.KEEP_MIN_MATERIALS_FIRST_LEVEL + ' zones; every level above it needs at least ' +
     CONFIG.KEEP_MIN_MATERIALS_PER_UPGRADE + '. Each zone is the only source of its own, ' +
     'so holding two zones forever will not build a Keep.</div>';
+  const buildH = h; h = "";
 
   // The Hall of Reigns: every lord before this one, newest first. Last on the
   // page on purpose -- it is history, and the buildings are today's work.
@@ -8484,7 +8728,9 @@ function renderKeep(){
     });
   }
 
-  v.innerHTML = h;
+  // Today's work first, then what it is for, then the rules of the reign, then
+  // history. The Oaths led the page and the buildings began a screen down.
+  v.innerHTML = title + buildH + shelfH + realmH + oathsH + h;
   v.querySelectorAll("button[data-renounce]").forEach(btn => {
     btn.onclick = () => {
       const id = btn.dataset.renounce;
@@ -9120,6 +9366,11 @@ function showReport(){
         (r.branchReady ? ' <b>A branch is waiting on the roster.</b>' : '') + '</div>';
     h += '</div>';
   });
+  // What happened, then what to do about it: the first decision of every session.
+  const needs = needsYouNow(abs);
+  if (needs.length)
+    h += '<div class="needs"><div class="eh">Needs you now</div>' +
+      needs.map(n => '<div class="need n-' + n.kind + '">' + n.html + '</div>').join("") + '</div>';
   h += '</div><div class="mfoot"><button class="btn pri" id="rclose">Very well</button></div></div>';
   scrim.innerHTML = h;
   document.body.appendChild(scrim);
@@ -9137,6 +9388,48 @@ function showReport(){
   scrim.querySelector("#rclose").onclick = close;
   scrim.querySelector("#rclose").focus();
   trapFocus(scrim, close);
+}
+
+/* The report said what happened and never what to do about it -- which is the
+   first decision of every session. Read from the live save at the moment the
+   report opens, most pressing first: a raid costs something if it lapses; a
+   region that fell is the absence's price; then who is free, who is waiting on
+   a decision, what can be built, and what the capital wants. */
+function needsYouNow(abs){
+  const out = [];
+  const t = nowMs();
+  openZones().forEach(zs => (zs.slate || []).filter(q => q.incursion).forEach(q => {
+    out.push({ kind: "raid", html: '<b>' + zoneDef(zs.id).name + '</b> is being raided — it lapses in ' +
+      '<b class="num" data-until="' + q.expiresAt + '">' + fmtDur(q.expiresAt - t) + '</b>.' });
+  }));
+  if (abs) state.zones.forEach(z => {
+    const s = abs.zones[z.id];
+    if (s && s.tierAfter < s.tierBefore)
+      out.push({ kind: "fell", html: '<b>' + zoneDef(z.id).name + '</b> fell to ' +
+        CONFIG.TIERS[s.tierAfter].name + '.' });
+  });
+  const fit = state.heroes.filter(h => isAvailable(h) && !h.injury.severity);
+  if (fit.length)
+    out.push({ kind: "idle", html: nameList(fit.map(h => h.name)) +
+      (fit.length > 1 ? " are" : " is") + " at the Keep and fit to ride." });
+  const branching = state.heroes.filter(h => awaitingSubclass(h) || awaitingTier3(h));
+  if (branching.length)
+    out.push({ kind: "branch", html: nameList(branching.map(h => h.name)) +
+      (branching.length > 1 ? " are" : " is") + " ready to branch, on the roster." });
+  const takeable = recruitOffers().filter(d => canRecruit(d).ok);
+  if (takeable.length)
+    out.push({ kind: "recruit", html: nameList(takeable.map(d => d.name)) +
+      " can be taken on, on the roster." });
+  const ready = Object.keys(CONFIG.BUILDINGS).filter(id => keepReady(id));
+  if (ready.length)
+    out.push({ kind: "build", html: (ready.length > 2
+      ? spell(ready.length).charAt(0).toUpperCase() + spell(ready.length).slice(1) + " buildings"
+      : "The " + nameList(ready.map(id => CONFIG.BUILDINGS[id].name))) + " can be raised at the Keep." });
+  const ws = highcrownOpen() ? writStatus() : null;
+  if (ws && ws.action !== "serving")
+    out.push({ kind: "writ", html: "Highcrown: " + ws.note +
+      (ws.action === "pay" && ws.canPay ? " It can be paid now." : "") });
+  return out;
 }
 
 /* ====================================================== THE RETURN REPORT ==
@@ -9219,10 +9512,26 @@ function narrate(r){
    impossible to diagnose from a bug report. Now it says so, loudly, and names
    the view that failed -- the same reasoning as the boot suite reporting to the
    console rather than blocking. */
+/* Where the window is scrolled belongs to the PAGE, not the window. Every page
+   change used to inherit the last page's offset: leaving the Keep halfway down
+   put the Realm halfway down its region cards, and opening a region from a
+   card low on the map opened the region partway down its own page. A page is
+   the view plus whichever drill-down is open; a new page starts at the top,
+   and a back button returns to where its page was left. */
+let pageShown = null;
+const pageScroll = {};
+let scrollBack = false;
+function pageKey(){
+  return currentView + (openZone ? "/z:" + openZone : "") + (openHero ? "/h:" + openHero : "") +
+    (succDraft ? "/s" + succDraft.step : "");
+}
+
 function render(){
   if (!state) return;
   // Before the try: a view that throws still leaves the right tab showing.
   syncView();
+  const page = pageKey(), turned = page !== pageShown;
+  if (turned && pageShown !== null) pageScroll[pageShown] = scrollY;
   try {
     renderHeader();
     // The tab appears the moment the capital writes, and never goes away again.
@@ -9237,7 +9546,13 @@ function render(){
     console.error("Banner & Keep — render(" + currentView + ") threw:", e);
     try { toast("Display error on " + currentView + " — see console"); } catch (e2) {}
   }
+  if (turned){
+    scrollTo(0, scrollBack ? rememberedScroll(page) : 0);
+    pageShown = page;
+  }
+  scrollBack = false;
 }
+function rememberedScroll(page){ return pageScroll[page] || 0; }
 
 /* Timers update in place so an open deploy drawer never loses its selection. */
 function updateTimers(){
@@ -9296,6 +9611,13 @@ function tick(){
   else updateTimers();
 }
 
+/* The send bar pins itself just above the nav, so it needs the nav's real
+   height -- which depends on the font and the phone's safe area. */
+function measureNav(){
+  const n = $("nav");
+  if (n && n.offsetHeight) document.documentElement.style.setProperty("--navh", n.offsetHeight + "px");
+}
+
 /* ============================================================== BOOT ====== */
 function boot(){
   const loaded = load();
@@ -9320,6 +9642,9 @@ function boot(){
 
   addEventListener("pagehide", saveNow);
   addEventListener("visibilitychange", () => { if (document.hidden) saveNow(); });
+  measureNav();
+  addEventListener("resize", measureNav);
+  uiPrefs = loadUiPrefs();
 
   render();
   showReport();
@@ -9370,16 +9695,32 @@ function assertAll(){
   const stateJsonAtStart = JSON.stringify(state);
   const savedAtStart = storageGet();
   const backupAtStart = storageGetKey(CONFIG.SAVE_BACKUP_KEY);
+  const prefsAtStart = storageGetKey(CONFIG.UI_PREFS_KEY);
   // The id counter as the suite FOUND it: several checks raise throwaway heroes
   // on clones, which moves the counter on, and read later it hid a counter that
   // had been rewound onto ids already in use.
   const heroSeqAtStart = heroSeq;
   // The screen the player was looking at, handed back at the end.
   const screenAtStart = screenSnapshot();
+  /* No check may write the player's storage, so none CAN: the whole run is
+     disarmed, and the switch put back at the end. Per-check disarming was the
+     rule, and one check forgot it -- the compact-roster check taps the real
+     toggle, the toggle saves the player's preferences, and at boot saves are
+     armed. A player who chose the compact roster had it reset in storage on
+     every load. Every verification sweep disarms first, so none of them could
+     see it; a wiped boot with saves armed did. The storage comparison in the
+     last check still catches any write that goes round the switch. */
+  const disarmedAtStart = savesDisarmed;
+  savesDisarmed = true;
+  // How long each check took: the suite runs on every boot, so a check that
+  // costs a player a quarter of a second should be findable by name.
+  const times = [];
   const chk = (name, fn) => {
     ran++; names.push(name);
+    const t0 = performance.now();
     try { const r = fn(); if (r !== true) fails.push(name + ": " + r); }
     catch (e) { fails.push(name + " THREW: " + e.message); }   // report, never halt
+    times.push([name, Math.round(performance.now() - t0)]);
   };
 
   /* Put the endgame into the state every writ-driving check assumes: open, and
@@ -9897,6 +10238,480 @@ function assertAll(){
       if (on() !== "map") return "the game is back on the map and the screen shows " + on();
       return marked() === "map" ? true : "the game is back on the map and the nav marks " + marked();
     } finally { restoreScreen(snap); }
+  });
+
+  /* ---------------------------------------------- the phone pass ------- */
+  /* Room to scroll however tall the player's window is. A scroll check on a
+     page shorter than the window passes because nothing could move. */
+  const withTallPage = fn => {
+    const was = document.body.style.minHeight;
+    document.body.style.minHeight = (innerHeight * 4 + 2000) + "px";
+    try { return fn(); } finally { document.body.style.minHeight = was; }
+  };
+  // A clone with a fresh board in the first open region and everyone home.
+  const withFreshBoard = fn => {
+    const real = state, wasDisarmed = savesDisarmed;
+    savesDisarmed = true;
+    try {
+      state = JSON.parse(JSON.stringify(real));
+      state.activeQuests = [];
+      state.heroes.forEach(h => { if (h.status !== "elder"){ h.status = "idle";
+        h.injury = { severity:null, healsAt:0 }; } });
+      const zs = openZones()[0];
+      zs.slate = []; reseedSlate(zs, nowMs(), true);
+      return fn(zs);
+    } finally { state = real; savesDisarmed = wasDisarmed; }
+  };
+
+  chk("a new page starts at the top, and a back button returns you to where you were", () => {
+    // Every page change used to inherit the last page's scroll: leaving the
+    // Keep halfway down put the Realm halfway down its region cards.
+    const snap = screenSnapshot();
+    try {
+      return withTallPage(() => {
+        currentView = "map"; openZone = null; openHero = null; render();
+        scrollTo(0, 300);
+        if (Math.abs(scrollY - 300) > 1) return "the page could not be scrolled to test";
+        $("#nav-keep").click();
+        if (scrollY !== 0) return "a tab opened " + Math.round(scrollY) + "px down, where the last one was left";
+        scrollTo(0, 300);
+        $("#nav-keep").click();
+        if (scrollY !== 0) return "tapping the tab you are on left you " + Math.round(scrollY) + "px down";
+        $("#nav-map").click();
+        scrollTo(0, 300);
+        // The region card's own handler, as a tap would run it.
+        const card = [...document.querySelectorAll('#v-map [role="button"]')].filter(n => !n.closest("svg"))[0];
+        if (!card) return "the Realm has no region card to open";
+        card.click();
+        if (!openZone) return "tapping a region card opened nothing";
+        if (scrollY !== 0) return "a region opened " + Math.round(scrollY) + "px down its own page";
+        const back = [...document.querySelectorAll("#v-map button")].filter(b => /The Realm/.test(b.textContent))[0];
+        if (!back) return "the region page has no way back";
+        back.click();
+        if (Math.abs(scrollY - 300) > 1)
+          return "back on the Realm at " + Math.round(scrollY) + "px, not where it was left (300)";
+        // And the suite's own cleanup puts the player's scroll back.
+        const mine = screenSnapshot();
+        $("#nav-keep").click();
+        restoreScreen(mine);
+        return Math.abs(scrollY - 300) <= 1 ? true
+          : "putting the player's screen back left them at " + Math.round(scrollY) + "px, not 300";
+      });
+    } finally { restoreScreen(snap); }
+  });
+
+  chk("the send panel says where everyone who cannot go actually is", () => {
+    // Every unavailable hero read "in the field" -- the Elder, who never leaves
+    // the Keep, and anyone serving a Levy at Highcrown -- and they were ranked
+    // in among those who could go, so a phone's first rows were greyed out.
+    const res = bequeath(o => o.kind === "elder");
+    if (res.why) return res.why;
+    const real = state, seq = heroSeq, wasDisarmed = savesDisarmed;
+    savesDisarmed = true;
+    try {
+      state = res.S;
+      const e = elderOf(), riders = state.heroes.filter(h => h !== e);
+      if (!e || riders.length < 4) return "no Elder, or too few riders, to test with";
+      const zs = openZones()[0];
+      zs.slate = []; reseedSlate(zs, nowMs(), true);
+      const q = zs.slate[0], other = zs.slate[1];
+      if (!q || !other) return "not enough work on the board to test with";
+      const out = riders[0], levied = riders[1];
+      deploy(other, [out]);
+      if (out.status !== "deployed") return "could not send anyone out to test with";
+      levied.status = "levy"; levied.levyUntil = nowMs() + 3 * 3600000;
+      // The three who cannot go are the strongest at anything, so a list
+      // ranked by strength alone would put every one of them first.
+      [e, out, levied].forEach(h => Object.keys(h.attrs).forEach(k => { h.attrs[k] = 40; }));
+      const d = renderDrawer(q);
+      const busy = [...d.querySelectorAll(".hpick")].map(r => r.classList.contains("busy"));
+      const firstBusy = busy.indexOf(true);
+      if (firstBusy >= 0 && busy.slice(firstBusy).some(b => !b))
+        return "a hero who can go is listed below one who cannot";
+      const note = h => ((d.querySelector('.hpick[data-h="' + h.id + '"] .note') || {}).textContent || "").trim();
+      if (!/Elder/.test(note(e))) return "the Elder reads \"" + note(e) + "\"";
+      if (!/Highcrown/.test(note(levied))) return "a hero serving a Levy reads \"" + note(levied) + "\"";
+      return /back in/.test(note(out)) ? true : "a hero in the field reads \"" + note(out) + "\", with no return time";
+    } finally { state = real; heroSeq = seq; savesDisarmed = wasDisarmed; }
+  });
+
+  chk("the send bar pins the odds and Send above the nav, and they are the panel's own", () => {
+    const snap = screenSnapshot();
+    try {
+      return withFreshBoard(zs => {
+        const q = zs.slate[0];
+        if (!q) return "no work to test with";
+        measureNav();
+        currentView = "map"; openZone = zs.id; selectedQuest = q.id; picked.clear(); render();
+        const barOf = () => $("#v-map .drawer .sendbar");
+        if (!barOf()) return "the send panel has no send bar";
+        if (getComputedStyle(barOf()).position === "sticky")
+          return "an empty send bar is pinned over the rows still to be picked";
+        const go0 = barOf().querySelector("#go");
+        if (!go0 || !go0.disabled) return "Send is live with nobody picked";
+        const hero = state.heroes.filter(isAvailable)[0];
+        if (!hero) return "nobody free to pick";
+        picked.add(hero.id); render();
+        const bar = barOf(), cs = getComputedStyle(bar);
+        if (cs.position !== "sticky") return "the send bar is not pinned once someone is picked";
+        const want = $("nav").offsetHeight + 6;
+        if (Math.abs(parseFloat(cs.bottom) - want) > 1)
+          return "the send bar sits " + cs.bottom + " up, not just above the " + $("nav").offsetHeight + "px nav";
+        if ($("#v-map .drawer").querySelectorAll("#go").length !== 1 || !bar.querySelector("#go"))
+          return "there is a Send button outside the bar";
+        const pv = previewQuest(q, [hero]);
+        const said = [...bar.querySelectorAll(".sb b")].map(b => b.textContent).join(" | ");
+        const truth = [pct(pv.chance), pct(pv.expectedHurt), "+" + round1(pv.influence)].join(" | ");
+        return said === truth ? true : "the bar says " + said + " where the preview says " + truth;
+      });
+    } finally { restoreScreen(snap); }
+  });
+
+  chk("opening a job brings it to the top of the screen", () => {
+    // It opened below the bottom edge of a phone, so the tap looked like nothing.
+    const snap = screenSnapshot();
+    try {
+      return withFreshBoard(zs => withTallPage(() => {
+        currentView = "map"; openZone = zs.id; selectedQuest = null; picked.clear(); render();
+        scrollTo(0, 0);
+        const cards = [...document.querySelectorAll("#v-map .quest:not(.active)")];
+        if (!cards.length) return "no job on the board to open";
+        cards[cards.length - 1].click();
+        const sel = $("#v-map .quest.sel");
+        if (!sel) return "tapping a job did not open it";
+        const want = $("header").offsetHeight + 8, top = sel.getBoundingClientRect().top;
+        return Math.abs(top - want) <= 2 ? true
+          : "the opened job sits " + Math.round(top) + "px down the screen, not just under the header (" + want + ")";
+      }));
+    } finally { restoreScreen(snap); }
+  });
+
+  chk("a region's card carries its event, and a Charter card offers only what it can do", () => {
+    const snap = screenSnapshot();
+    try {
+      return withFreshBoard(zs => {
+        // Somewhere a Charter would lock, with nothing locked yet and no Oath against it.
+        zs.influenceFloor = 0;
+        zs.influence = CONFIG.TIERS[CONFIG.WIN_MIN_TIER].min;
+        if (state.legacy){ state.legacy.oaths = []; state.legacy.broken = []; }
+        currentView = "map"; openZone = zs.id; selectedQuest = null;
+        state.charters = 0; render();
+        const v = $("#v-map"), head = v.querySelector(".card");
+        if (!head || !head.querySelector(".zev .ev")) return "the region's event is not in the region's own card";
+        const ch = v.querySelector(".charter");
+        if (!ch) return "no Charter card at all";
+        if (ch.querySelector("button")) return "a Charter that cannot be used still shows a button";
+        if (!/Warfronts/.test(ch.textContent)) return "a Charter card with none held does not say where they come from";
+        state.charters = CONFIG.CONSOLIDATE_CHARTER_COST; render();
+        const b = v.querySelector(".charter #consolidate");
+        return b && !b.disabled ? true : "a Charter that can be used offers no way to use it";
+      });
+    } finally { restoreScreen(snap); }
+  });
+
+  chk("the work on a page comes before the paperwork", () => {
+    // On a phone the jobs began a screen and a half down a region's page, and
+    // the buildings a screen down the Keep's.
+    const snap = screenSnapshot();
+    const before = (a, b) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    try {
+      return withFreshBoard(zs => {
+        zs.influenceFloor = 0;
+        zs.influence = CONFIG.TIERS[CONFIG.WIN_MIN_TIER].min;
+        if (state.legacy){ state.legacy.oaths = []; state.legacy.broken = []; }
+        currentView = "map"; openZone = zs.id; selectedQuest = null;
+        state.charters = 0; render();
+        const v = $("#v-map");
+        const job = () => v.querySelector(".quest:not(.active)"), ch = () => v.querySelector(".charter");
+        if (!job() || !ch()) return "no job or no Charter card to put in order";
+        if (!before(job(), ch())) return "a Charter that cannot be used sits above the jobs";
+        state.charters = CONFIG.CONSOLIDATE_CHARTER_COST; render();
+        if (!before(ch(), job())) return "a Charter that can be used is buried below the jobs";
+        currentView = "keep"; openZone = null; render();
+        const k = $("#v-keep"), b = k.querySelector(".card.build");
+        if (!b) return "the Keep shows no buildings";
+        const above = [...k.querySelectorAll(".card")].filter(n => !n.classList.contains("build") && before(n, b));
+        return above.length ? "the Keep puts " + above.map(n =>
+          ((n.querySelector("h3, h2") || {}).textContent || "a card")).join(", ") + " above its buildings" : true;
+      });
+    } finally { restoreScreen(snap); }
+  });
+
+  chk("a building that can be raised now is marked, and only then", () => {
+    const snap = screenSnapshot(), real = state;
+    try {
+      state = JSON.parse(JSON.stringify(real));
+      // Every building back at its first level, so each has a next one to price.
+      Object.keys(CONFIG.BUILDINGS).forEach(id => { state.keep[id] = CONFIG.BUILDINGS[id].start; });
+      const ids = Object.keys(CONFIG.BUILDINGS).filter(id => keepUpgradeCost(id));
+      if (!ids.length) return "nothing left to build, even from the start";
+      // The check's own reckoning, not keepCanAfford's: is what it costs in the stores?
+      const affordable = id => { const c = keepUpgradeCost(id);
+        return !!c && state.gold >= c.gold &&
+          Object.keys(c.materials).every(m => (state.materials[m] || 0) >= c.materials[m]); };
+      const empty = () => { state.gold = 0; Object.keys(state.materials).forEach(m => { state.materials[m] = 0; }); };
+      currentView = "keep"; openZone = null; openHero = null;
+      empty(); render();
+      if ($("#v-keep .card.build.can")) return "a building is marked ready with nothing in the stores";
+      const plain = getComputedStyle($("#v-keep .card.build")).boxShadow;
+      // Exactly what one building costs, and nothing else.
+      const c = keepUpgradeCost(ids[0]);
+      state.gold = c.gold;
+      Object.keys(c.materials).forEach(m => { state.materials[m] = c.materials[m]; });
+      render();
+      const marked = [...document.querySelectorAll("#v-keep .card.build.can")].map(n => n.dataset.b).join();
+      const due = ids.filter(affordable).join();
+      if (marked !== due) return "with " + CONFIG.BUILDINGS[ids[0]].name + "'s price in the stores, [" +
+        marked + "] are marked ready and [" + due + "] can be built";
+      const can = $("#v-keep .card.build.can");
+      return getComputedStyle(can).boxShadow !== plain ? true : "a ready building looks like any other";
+    } finally { state = real; restoreScreen(snap); }
+  });
+
+  chk("a price the Keep cannot pay says by how much", () => {
+    // The shortfall moved from a line of its own to beside each price.
+    const snap = screenSnapshot(), real = state;
+    try {
+      state = JSON.parse(JSON.stringify(real));
+      Object.keys(CONFIG.BUILDINGS).forEach(id => { state.keep[id] = CONFIG.BUILDINGS[id].start; });
+      state.gold = 1; Object.keys(state.materials).forEach(m => { state.materials[m] = 1; });
+      currentView = "keep"; openZone = null; openHero = null; render();
+      const id = Object.keys(CONFIG.BUILDINGS).filter(i => keepUpgradeCost(i))[0];
+      const c = keepUpgradeCost(id), card = $('#v-keep .card.build[data-b="' + id + '"]');
+      if (!card) return "no card for " + id;
+      const gaps = [...card.querySelectorAll(".cost.short .gap")].map(g => g.firstChild.textContent).join(" ");
+      const want = [c.gold - 1].concat(Object.keys(c.materials).map(m => c.materials[m] - 1))
+        .filter(n => n > 0).map(n => "−" + n).join(" ");
+      return gaps === want ? true : "the prices say they are short by " + (gaps || "nothing") + ", the stores by " + want;
+    } finally { state = real; restoreScreen(snap); }
+  });
+
+  /* ------------------------------------------- the second phone pass ---- */
+  chk("a job card quotes the standing its send panel would win", () => {
+    // The card quoted gold and material and never standing -- the main currency.
+    const snap = screenSnapshot();
+    try {
+      return withFreshBoard(zs => {
+        const q = zs.slate.filter(x => bestOdds(x))[0];
+        if (!q) return "no job anyone is free for";
+        currentView = "map"; openZone = zs.id; selectedQuest = null; render();
+        const card = [...document.querySelectorAll("#v-map .quest")].filter(n =>
+          (n.getAttribute("aria-label") || "").indexOf(q.name) >= 0)[0];
+        const gain = card && card.querySelector(".qgain b");
+        if (!gain) return "the card quotes no standing";
+        // Open it with the card's own party and read the panel's figure.
+        selectedQuest = q.id; picked.clear();
+        bestParty(q, q.required).party.forEach(h => picked.add(h.id));
+        render();
+        const row = [...document.querySelectorAll("#v-map .readout > div")].filter(r =>
+          /Banner/.test(r.textContent))[0];
+        const panel = row && row.querySelector("b").textContent;
+        return gain.textContent === panel ? true
+          : "the card says " + gain.textContent + " banner, the send panel " + panel;
+      });
+    } finally { restoreScreen(snap); }
+  });
+
+  chk("every store in the header is named, and a tap shows the names", () => {
+    // Named only by a hover tooltip, which a phone does not have.
+    const snap = screenSnapshot();
+    try {
+      resLegend = false; renderHeader();
+      const items = [...document.querySelectorAll("#resbtn .r")];
+      if (!items.length) return "the header shows no stores";
+      const unnamed = items.filter(n => !(n.querySelector(".sr, .rn") || {}).textContent);
+      if (unnamed.length) return unnamed.length + " stores have no name a screen reader can read";
+      $("#resbtn").click();
+      const shown = document.querySelectorAll("#resbtn .r .rn").length;
+      if (shown !== items.length) return "a tap named " + shown + " of " + items.length + " stores";
+      if ($("#resbtn").getAttribute("aria-expanded") !== "true") return "the stores do not say they are expanded";
+      $("#resbtn").click();
+      return document.querySelectorAll("#resbtn .r .rn").length === 0 ? true : "a second tap left the names showing";
+    } finally { restoreScreen(snap); }
+  });
+
+  chk("a material is shown once its ground is open or the Keep holds some", () => {
+    // Kingsbone sat in the header at 0 from day one, naming a region the game
+    // keeps secret until the endgame.
+    const real = state, snap = screenSnapshot();
+    try {
+      state = JSON.parse(JSON.stringify(real));
+      const gated = CONFIG.ZONES.filter(z => z.gated)[0];
+      if (!gated) return "no region opens late, so nothing to hide";
+      const m = gated.material, name = CONFIG.MATERIALS[m].name;
+      const shown = () => [...document.querySelectorAll("#resbtn .r")].some(n => n.getAttribute("title") === name);
+      // Closed and none held.
+      const zs = state.zones.filter(z => z.id === gated.id)[0];
+      if (state.highcrown) state.highcrown.open = false;
+      state.materials[m] = 0;
+      renderHeader();
+      if (zoneIsOpen(zs)) return "could not close " + gated.name + " to test";
+      if (shown()) return name + " is in the header before " + gated.name + " opens";
+      state.materials[m] = 1; renderHeader();
+      return shown() ? true : name + " the Keep holds is hidden from the header";
+    } finally { state = real; restoreScreen(snap); }
+  });
+
+  chk("a banner bar names the next tier", () => {
+    // "72 / 80" never said what 80 was.
+    for (let i = 0; i < TIER_COUNT; i++){
+      const t = CONFIG.TIERS[i];
+      const html = influenceBars({ id: CONFIG.ZONES[0].id, influence: t.min, rival: 0, influenceFloor: 0, event: null });
+      const want = i < TIER_COUNT - 1 ? CONFIG.TIERS[i + 1].name + " at " + CONFIG.TIERS[i + 1].min
+                                      : "the highest standing there is";
+      if (html.indexOf(want) < 0) return "at " + t.name + " the bar does not say \"" + want + "\"";
+    }
+    return true;
+  });
+
+  chk("the report ends with what needs doing, read from the live save", () => {
+    const real = state, wasOpen = reportOpen, wasHelp = helpOpen, wasDisarmed = savesDisarmed;
+    const liveScrim = document.querySelector(".scrim");
+    if (liveScrim) liveScrim.remove();
+    savesDisarmed = true;
+    try {
+      state = JSON.parse(JSON.stringify(real));
+      state.activeQuests = [];
+      state.heroes.forEach(h => { if (h.status !== "elder"){ h.status = "idle"; h.injury = { severity:null, healsAt:0 }; } });
+      const zs = openZones()[0];
+      zs.slate = []; reseedSlate(zs, nowMs(), true);
+      zs.slate.push(Object.assign({}, zs.slate[0], { id: "probe-raid", incursion: true }));
+      state.gold = 1e7; Object.keys(state.materials).forEach(m => { state.materials[m] = 1e7; });
+      // Own the premise: a Keep with every building finished has nothing to
+      // raise however rich it is (found by sweepKeep's all-maxed configuration).
+      Object.keys(CONFIG.BUILDINGS).forEach(id => { state.keep[id] = CONFIG.BUILDINGS[id].start; });
+      const abs = { elapsedMs: 3600000, healed: [], at: nowMs(), zones: {} };
+      abs.zones[zs.id] = { tierBefore: 2, tierAfter: 1, lost: 5, rivalGained: 2 };
+      const kinds = needsYouNow(abs).map(n => n.kind);
+      for (const k of ["raid", "fell", "idle", "build"])
+        if (kinds.indexOf(k) < 0) return "with a " + k + " to see to, the report does not say so";
+      // Nothing to do: nobody free, nothing raided or fallen, nothing affordable.
+      state.zones.forEach(z => { z.slate = (z.slate || []).filter(q => !q.incursion); });
+      state.heroes.forEach(h => { if (h.status !== "elder") h.injury = { severity: CONFIG.INJURY_SEVERITIES[0].id, healsAt: nowMs() + 3600000 }; });
+      state.gold = 0; Object.keys(state.materials).forEach(m => { state.materials[m] = 0; });
+      const quiet = needsYouNow(null).filter(n => n.kind === "idle" || n.kind === "build" || n.kind === "raid" || n.kind === "fell");
+      if (quiet.length) return "with nothing to see to, the report still says: " + quiet.map(n => n.kind).join(", ");
+      // And it is on the report itself, at the end.
+      state.heroes.forEach(h => { if (h.status !== "elder") h.injury = { severity:null, healsAt:0 }; });
+      reportOpen = false; helpOpen = false;
+      state.pendingReports = []; state.pendingAbsence = abs;
+      showReport();
+      const sc = document.querySelector(".scrim");
+      if (!sc) return "the report did not open";
+      const box = sc.querySelector(".mbody .needs");
+      if (!box || box !== sc.querySelector(".mbody").lastElementChild)
+        return "what needs doing is not the last thing on the report";
+      return box.querySelectorAll(".need").length === needsYouNow(abs).length ? true
+        : "the report lists " + box.querySelectorAll(".need").length + " things to do, not " + needsYouNow(abs).length;
+    } finally {
+      document.querySelectorAll(".scrim").forEach(s => s.remove());
+      if (liveScrim) document.body.appendChild(liveScrim);
+      reportOpen = wasOpen; helpOpen = wasHelp;
+      state = real; savesDisarmed = wasDisarmed;
+    }
+  });
+
+  chk("the hurt-risk explainer folds after the first few jobs, and a tap unfolds it", () => {
+    const snap = screenSnapshot();
+    try {
+      return withFreshBoard(() => {
+        // A job and a party where the worst case and the expected one differ.
+        let found = null;
+        for (const zs of openZones()){
+          if (!zs.slate.length){ reseedSlate(zs, nowMs(), true); }
+          for (const q of zs.slate){
+            for (const n of [1, 2]){
+              const party = bestParty(q, n).party;
+              if (!party.length) continue;
+              const pv = previewQuest(q, party);
+              if (pv.worst > pv.expectedHurt + 0.02){ found = { zs, q, party }; break; }
+            }
+            if (found) break;
+          }
+          if (found) break;
+        }
+        if (!found) return "no job where the worst case differs from the expected one";
+        const open = () => {
+          currentView = "map"; openZone = found.zs.id; selectedQuest = null; picked.clear(); render();
+          const card = [...document.querySelectorAll("#v-map .quest")].filter(n =>
+            (n.getAttribute("aria-label") || "").indexOf(found.q.name) >= 0)[0];
+          card.click();                                    // the tap, which counts
+          found.party.forEach(h => picked.add(h.id)); render();
+          return $("#v-map .drawer");
+        };
+        uiPrefs.hurtTipSeen = 0; hurtTipOpen = false;
+        let d = open();
+        if (!d.querySelector(".hurttip")) return "the explainer is folded on the first job ever opened";
+        if (uiPrefs.hurtTipSeen !== 1) return "opening a job did not count as reading it";
+        // The opening that brings the count to hurtTipShows is the last showing.
+        uiPrefs.hurtTipSeen = CONFIG_UI.hurtTipShows - 1; d = open();
+        if (!d.querySelector(".hurttip")) return "the explainer folded before its last showing";
+        d = open();                                        // one past the last showing
+        if (d.querySelector(".hurttip")) return "the explainer never folds";
+        const q = d.querySelector("#hurttip");
+        if (!q) return "a folded explainer leaves no way to read it";
+        q.click();
+        return $("#v-map .drawer .hurttip") ? true : "tapping the ? did not unfold the explainer";
+      });
+    } finally { restoreScreen(snap); }
+  });
+
+  chk("the roster has a compact view, and a recruit with no bed waits below the heroes", () => {
+    const real = state, snap = screenSnapshot(), realCap = rosterCap;
+    try {
+      state = JSON.parse(JSON.stringify(real));
+      currentView = "roster"; openHero = null;
+      uiPrefs.compactRoster = true; render();
+      const rows = [...document.querySelectorAll("#v-roster .hero:not(.recruit)")];
+      if (rows.length !== state.heroes.length) return "compact shows " + rows.length + " of " + state.heroes.length + " heroes";
+      if (rows.some(r => !r.classList.contains("compact") || r.querySelector(".chips")))
+        return "a compact row still carries the full card";
+      $("#rostermode").click();
+      if (uiPrefs.compactRoster || document.querySelector("#v-roster .hero.compact"))
+        return "the toggle did not go back to full cards";
+      // Someone offered and no bed for them: news, below the roster.
+      state.zones.forEach(z => { if (zoneIsOpen(z)) z.influence = Math.max(z.influence, CONFIG.TIERS[CONFIG.RECRUIT_MIN_TIER].min); });
+      if (!recruitOffers().length) return true;          // every house already rides
+      rosterCap = () => state.heroes.length;
+      render();
+      const heroes = [...document.querySelectorAll("#v-roster .hero:not(.recruit)")];
+      if (document.querySelector("#v-roster .hero.recruit")) return "a recruit with no bed still holds the top of the roster";
+      const wait = $("#v-roster .offerwait");
+      if (!wait) return "a recruit with no bed is not mentioned";
+      return heroes.length && (heroes[heroes.length - 1].compareDocumentPosition(wait) & Node.DOCUMENT_POSITION_FOLLOWING)
+        ? true : "a recruit with no bed is listed above the heroes";
+    } finally { rosterCap = realCap; state = real; restoreScreen(snap); }
+  });
+
+  chk("the authored job names keep their possessives", () => {
+    // Seventeen names lost their apostrophes in a delegated batch ("The
+    // Ferrymans Wake") while the flavour lines beside them kept theirs. These
+    // are the stems that were stripped; a regenerated pool must not strip them.
+    const stripped = /\b(Millers|Ferrymans|Shepherds|Widows|Reeves|Drovers|Cutters|Courts|Grays) (?!of\b|in\b|at\b|on\b)[A-Z]/;
+    const names = [];
+    Object.keys(QUEST_POOLS).forEach(t => Object.keys(QUEST_POOLS[t]).forEach(z =>
+      (QUEST_POOLS[t][z] || []).forEach(e => names.push(e.name))));
+    const bad = names.filter(n => stripped.test(n));
+    return bad.length ? "a possessive with no apostrophe: " + bad.slice(0, 3).join(", ") : true;
+  });
+
+  chk("the authored job names keep one house style", () => {
+    // Two delegated batches disagreed -- "The Relief Of Harrow Mill" beside "The
+    // Fall of Coterie Hall", "Ash Knight" beside the faction's own "Ash-Knights".
+    // Small words lower case unless they lead; compound names hyphenated, in
+    // job names and in kit alike.
+    const small = /^(a|an|the|and|or|of|at|in|on|to|by|for|off)$/i;
+    const compounds = /\b(Ash Knight|Ash Wight|Cinder Beast|Briar Cat|Stone Troll|Fen Witch|Bog Iron|Ash Choked)/;
+    const names = [];
+    Object.keys(QUEST_POOLS).forEach(t => Object.keys(QUEST_POOLS[t]).forEach(z =>
+      (QUEST_POOLS[t][z] || []).forEach(e => names.push(e.name))));
+    for (const n of names){
+      const caps = n.split(" ").slice(1).filter(w => small.test(w) && w !== w.toLowerCase());
+      if (caps.length) return "\"" + n + "\" capitalises " + caps.join(", ");
+      if (compounds.test(n)) return "\"" + n + "\" spells " + n.match(compounds)[1] + " without its hyphen";
+    }
+    const loose = Object.keys(GEAR_BY_ID).map(id => GEAR_BY_ID[id]).filter(g => compounds.test(g.name));
+    return loose.length ? "kit spells a compound name without its hyphen: " + loose[0].name : true;
   });
 
   chk("a styled quest card actually wears its class", () => {
@@ -11732,14 +12547,29 @@ function assertAll(){
   });
 
   chk("events rotate and never leave a zone without one", () => {
-    const real = state;
+    /* Every ROLL is recorded, not the event live at the end of each step. It
+       used to read only the latter -- and with steps of nine hours and events of
+       four to eight, an event that began and ended inside one step was never
+       seen, so "never rolled" could be said of an event rolled eight times.
+       Whether that happened moved with every change to the random stream, so
+       the fuzzer found it on two legal saves the day the job names changed, and
+       on one of them in the build before as well. A rolled event must also
+       HOLD: one that expires the instant it is rolled is the defect the probe
+       below plants, and is now asked about directly. */
+    const real = state, realRoll = rollEvent;
     try {
       state = JSON.parse(JSON.stringify(real));
       const z = state.zones[0];
       const t0 = nowMs();
       state.activeQuests = []; state.pendingReports = []; state.pendingAbsence = null;
       z.event = { type:"quiet", expires: t0 + 1000 };
-      const seen = new Set();
+      const rolled = {};
+      let fleeting = null;
+      rollEvent = function(zs, t, avoid){
+        const e = realRoll(zs, t, avoid);
+        if (zs === z){ rolled[e.type] = (rolled[e.type] || 0) + 1; if (!(e.expires > t)) fleeting = e.type; }
+        return e;
+      };
       return withSeed(0x3EEDD, () => {
         let cur = t0;
         for (let i = 0; i < 60; i++){
@@ -11749,14 +12579,13 @@ function assertAll(){
           if (!z.event || !CONFIG.ZONE_EVENTS[z.event.type])
             return "a zone was left with no valid event after rotation " + i;
           if (z.event.expires <= cur) return "an event was left already expired";
-          seen.add(z.event.type);
         }
-        // Over sixty rotations every event should have appeared at least once.
-        const missing = Object.keys(CONFIG.ZONE_EVENTS).filter(id => !seen.has(id));
+        if (fleeting) return "an event that cannot hold: " + fleeting + " expires the moment it is rolled";
+        const missing = Object.keys(CONFIG.ZONE_EVENTS).filter(id => !rolled[id]);
         return missing.length === 0
           ? true : "never rolled across sixty rotations: " + missing.join(", ");
       });
-    } finally { state = real; }
+    } finally { rollEvent = realRoll; state = real; }
   });
 
   chk("a long absence rotates through events instead of freezing one", () => {
@@ -14584,10 +15413,15 @@ function assertAll(){
     // Nor to the reign kept after a succession: several checks pass the Keep on.
     if (backupAtStart !== storageGetKey(CONFIG.SAVE_BACKUP_KEY))
       return "the suite wrote over the passed-on reign while running";
+    // Nor to how the player likes their screens: checks open jobs and flip the roster.
+    if (prefsAtStart !== storageGetKey(CONFIG.UI_PREFS_KEY))
+      return "the suite changed the player's screen preferences in storage";
     return true;
   });
 
-  return { pass: fails.length === 0, count: ran, fails, names: names.slice() };
+  savesDisarmed = disarmedAtStart;
+  return { pass: fails.length === 0, count: ran, fails, names: names.slice(),
+           slowest: times.slice().sort((a, b) => b[1] - a[1]).slice(0, 5) };
 }
 
 /* ============================================================ FALSIFY =====
@@ -14959,6 +15793,10 @@ function falsify(opts){
       () => { keep.qm = CONFIG.ZONE_EVENTS.quiet.maxH; keep.qn = CONFIG.ZONE_EVENTS.quiet.minH;
               CONFIG.ZONE_EVENTS.quiet.minH = 0; CONFIG.ZONE_EVENTS.quiet.maxH = 0; },
       () => { CONFIG.ZONE_EVENTS.quiet.minH = keep.qn; CONFIG.ZONE_EVENTS.quiet.maxH = keep.qm; }],
+    // And the other claim: an event the table names that nothing ever rolls.
+    ["an event nothing ever rolls", "events rotate and never leave a zone without one",
+      () => { keep.mwt = CONFIG.ZONE_EVENTS.muster.weight; CONFIG.ZONE_EVENTS.muster.weight = 0; },
+      () => { CONFIG.ZONE_EVENTS.muster.weight = keep.mwt; }],
     ["a raid threshold nobody reaches", "a raid appears at the threshold and costs something if ignored",
       () => { keep.ir = CONFIG.INCURSION_RIVAL_MIN; CONFIG.INCURSION_RIVAL_MIN = 999; },
       () => { CONFIG.INCURSION_RIVAL_MIN = keep.ir; }],
@@ -15978,7 +16816,212 @@ function falsify(opts){
     ["a suite that leaves a second page showing", "the suite hands the player back their own screen",
       () => { keep.rs3 = restoreScreen;
               restoreScreen = (s, sw) => { keep.rs3(s, sw); $("#v-" + VIEWS.filter(n => n !== s.view)[0]).hidden = false; }; },
-      () => { restoreScreen = keep.rs3; render(); }]
+      () => { restoreScreen = keep.rs3; render(); }],
+    // The phone pass.
+    ["a tab that opens where the last one was left", "a new page starts at the top, and a back button returns you to where you were",
+      () => { keep.sv5 = setView; setView = v => { const y = scrollY; keep.sv5(v); scrollTo(0, y); }; },
+      () => { setView = keep.sv5; }],
+    ["a tab that keeps your place when tapped again", "a new page starts at the top, and a back button returns you to where you were",
+      () => { keep.sv6 = setView;
+              setView = v => { const same = v === currentView, y = scrollY; keep.sv6(v); if (same) scrollTo(0, y); }; },
+      () => { setView = keep.sv6; }],
+    ["a drill-down that opens partway down", "a new page starts at the top, and a back button returns you to where you were",
+      () => { keep.pk = pageKey; pageKey = () => currentView; },
+      () => { pageKey = keep.pk; }],
+    ["a back button that forgets where you were", "a new page starts at the top, and a back button returns you to where you were",
+      () => { keep.rmb = rememberedScroll; rememberedScroll = () => 0; },
+      () => { rememberedScroll = keep.rmb; }],
+    ["a suite that loses the player's scroll", "a new page starts at the top, and a back button returns you to where you were",
+      () => { keep.rs6 = restoreScreen; restoreScreen = (s, sw) => keep.rs6(Object.assign({}, s, { scroll: 0 }), sw); },
+      () => { restoreScreen = keep.rs6; }],
+    ["a send panel that calls everyone away 'in the field'", "the send panel says where everyone who cannot go actually is",
+      () => { keep.hsl0 = heroStatusLine; heroStatusLine = () => ({ cls:"warn", html:"in the field" }); },
+      () => { heroStatusLine = keep.hsl0; }],
+    ["a send panel that forgets the Levy", "the send panel says where everyone who cannot go actually is",
+      () => { keep.hsl2 = heroStatusLine;
+              heroStatusLine = (h, o) => h.status === "levy" ? { cls:"warn", html:"in the field" } : keep.hsl2(h, o); },
+      () => { heroStatusLine = keep.hsl2; }],
+    ["a send panel with no return time", "the send panel says where everyone who cannot go actually is",
+      () => { keep.hsl3 = heroStatusLine;
+              heroStatusLine = (h, o) => h.status === "deployed" ? { cls:"warn", html:"in the field" } : keep.hsl3(h, o); },
+      () => { heroStatusLine = keep.hsl3; }],
+    ["a send panel ranked by strength alone", "the send panel says where everyone who cannot go actually is",
+      () => { keep.dor = drawerOrder;
+              drawerOrder = (q, ctx) => state.heroes.slice().sort((a, b) =>
+                heroStat(b, q.stat || "power", ctx) - heroStat(a, q.stat || "power", ctx)); },
+      () => { drawerOrder = keep.dor; }],
+    ["a send bar that never pins", "the send bar pins the odds and Send above the nav, and they are the panel's own",
+      () => { keep.sb1 = sendBarHTML; sendBarHTML = (pv, n) => keep.sb1(pv, n).replace(" pinned", ""); },
+      () => { sendBarHTML = keep.sb1; }],
+    ["a send bar pinned with nobody picked", "the send bar pins the odds and Send above the nav, and they are the panel's own",
+      () => { keep.sb2 = sendBarHTML;
+              sendBarHTML = (pv, n) => keep.sb2(pv, n).replace('class="sendbar"', 'class="sendbar pinned"'); },
+      () => { sendBarHTML = keep.sb2; }],
+    ["a Send button live with nobody picked", "the send bar pins the odds and Send above the nav, and they are the panel's own",
+      () => { keep.sb3 = sendBarHTML; sendBarHTML = (pv, n) => keep.sb3(pv, n).replace(" disabled", ""); },
+      () => { sendBarHTML = keep.sb3; }],
+    ["a send bar that sits behind the nav", "the send bar pins the odds and Send above the nav, and they are the panel's own",
+      () => { keep.mn = measureNav;
+              measureNav = () => document.documentElement.style.setProperty("--navh", "0px"); },
+      () => { measureNav = keep.mn; measureNav(); }],
+    ["a second Send button in the panel", "the send bar pins the odds and Send above the nav, and they are the panel's own",
+      () => { keep.rd = renderDrawer;
+              renderDrawer = q => { const d = keep.rd(q); d.insertAdjacentHTML("afterbegin", '<button id="go">Send</button>'); return d; }; },
+      () => { renderDrawer = keep.rd; }],
+    ["a send bar quoting other odds", "the send bar pins the odds and Send above the nav, and they are the panel's own",
+      () => { keep.sb4 = sendBarHTML;
+              sendBarHTML = (pv, n) => keep.sb4(pv && Object.assign({}, pv, { chance: pv.chance / 2 }), n); },
+      () => { sendBarHTML = keep.sb4; }],
+    ["a job that opens below the fold", "opening a job brings it to the top of the screen",
+      () => { keep.btt = bringToTop; bringToTop = () => {}; },
+      () => { bringToTop = keep.btt; }],
+    ["an event a card away from its region", "a region's card carries its event, and a Charter card offers only what it can do",
+      () => { keep.zev = zoneEventHTML; zoneEventHTML = () => ""; },
+      () => { zoneEventHTML = keep.zev; }],
+    ["a Charter button with no Charter to spend", "a region's card carries its event, and a Charter card offers only what it can do",
+      () => { keep.chh = charterHTML; charterHTML = (zs, con) => keep.chh(zs, Object.assign({}, con, { ok: true })); },
+      () => { charterHTML = keep.chh; }],
+    ["a Charter card that never says where they come from", "a region's card carries its event, and a Charter card offers only what it can do",
+      () => { keep.chh2 = charterHTML; charterHTML = (zs, con) => keep.chh2(zs, Object.assign({}, con, { target: 0 })); },
+      () => { charterHTML = keep.chh2; }],
+    ["a usable Charter with no button", "a region's card carries its event, and a Charter card offers only what it can do",
+      () => { keep.chh3 = charterHTML;
+              charterHTML = (zs, con) => keep.chh3(zs, Object.assign({}, con, { ok: false, why: "charters" })); },
+      () => { charterHTML = keep.chh3; }],
+    ["a Keep that never marks a building ready", "a building that can be raised now is marked, and only then",
+      () => { keep.kr = keepReady; keepReady = () => false; },
+      () => { keepReady = keep.kr; }],
+    ["a Keep that marks every building ready", "a building that can be raised now is marked, and only then",
+      () => { keep.kr2 = keepReady; keepReady = () => true; },
+      () => { keepReady = keep.kr2; }],
+    ["a ready building painted like any other", "a building that can be raised now is marked, and only then",
+      () => { keep.kst = document.createElement("style");
+              keep.kst.textContent = ".build.can{box-shadow:none!important}";
+              document.head.appendChild(keep.kst); },
+      () => { keep.kst.remove(); }],
+    ["a price that is short by the wrong amount", "a price the Keep cannot pay says by how much",
+      () => { keep.kca = keepCanAfford;
+              keepCanAfford = id => { const a = keep.kca(id); Object.keys(a.short || {}).forEach(k => { a.short[k] = 1; }); return a; }; },
+      () => { keepCanAfford = keep.kca; }],
+    // The second phone pass.
+    ["a card that quotes no standing", "a job card quotes the standing its send panel would win",
+      () => { keep.rzp = renderZonePanel;
+              renderZonePanel = v => { keep.rzp(v); v.querySelectorAll(".qgain").forEach(n => n.remove()); }; },
+      () => { renderZonePanel = keep.rzp; }],
+    ["a card that quotes double the standing", "a job card quotes the standing its send panel would win",
+      () => { keep.bodbl = bestOdds;
+              bestOdds = q => { const o = keep.bodbl(q); if (o) o.influence *= 2; return o; }; },
+      () => { bestOdds = keep.bodbl; }],
+    ["stores named only by hover", "every store in the header is named, and a tap shows the names",
+      () => { keep.rh1 = renderHeader; $("#res")._html = null;
+              renderHeader = () => { keep.rh1(); document.querySelectorAll("#res .sr, #res .rn").forEach(n => n.remove()); }; },
+      () => { renderHeader = keep.rh1; $("#res")._html = null; renderHeader(); }],
+    ["a tap that names nothing", "every store in the header is named, and a tap shows the names",
+      () => { keep.rh2 = renderHeader; $("#res")._html = null;
+              renderHeader = () => { keep.rh2(); document.querySelectorAll("#res .rn").forEach(n => n.remove()); }; },
+      () => { renderHeader = keep.rh2; $("#res")._html = null; renderHeader(); }],
+    ["stores that never say they are expanded", "every store in the header is named, and a tap shows the names",
+      () => { keep.rh3 = renderHeader; $("#res")._html = null;
+              renderHeader = () => { keep.rh3(); const b = $("#resbtn"); if (b) b.setAttribute("aria-expanded", "false"); }; },
+      () => { renderHeader = keep.rh3; $("#res")._html = null; renderHeader(); }],
+    ["names that never hide again", "every store in the header is named, and a tap shows the names",
+      () => { keep.rh4 = renderHeader; $("#res")._html = null;
+              renderHeader = () => { keep.rh4(); const b = $("#resbtn"); if (b) b.onclick = () => { resLegend = true; $("#res")._html = null; renderHeader(); }; }; },
+      () => { renderHeader = keep.rh4; $("#res")._html = null; renderHeader(); }],
+    ["a late region's material shown from day one", "a material is shown once its ground is open or the Keep holds some",
+      () => { keep.ss1 = storesShown; storesShown = () => Object.keys(CONFIG.MATERIALS); },
+      () => { storesShown = keep.ss1; $("#res")._html = null; renderHeader(); }],
+    ["a material the Keep holds kept out of sight", "a material is shown once its ground is open or the Keep holds some",
+      () => { keep.ss2 = storesShown;
+              storesShown = () => keep.ss2().filter(m => openZones().some(z => zoneDef(z.id).material === m)); },
+      () => { storesShown = keep.ss2; $("#res")._html = null; renderHeader(); }],
+    ["a banner bar that never names the next tier", "a banner bar names the next tier",
+      () => { keep.ibn = influenceBars;
+              influenceBars = zs => keep.ibn(zs).replace(/<span class="nexttier">[^<]*<\/span> · /, ""); },
+      () => { influenceBars = keep.ibn; }],
+    ["a report that never says what needs doing", "the report ends with what needs doing, read from the live save",
+      () => { keep.nyn = needsYouNow; needsYouNow = () => []; },
+      () => { needsYouNow = keep.nyn; }],
+    ["a report that always says someone is free", "the report ends with what needs doing, read from the live save",
+      () => { keep.nyn2 = needsYouNow; needsYouNow = abs => keep.nyn2(abs).concat([{ kind: "idle", html: "probe" }]); },
+      () => { needsYouNow = keep.nyn2; }],
+    ["what needs doing put first, not last", "the report ends with what needs doing, read from the live save",
+      () => { keep.srp = showReport;
+              showReport = function(){ keep.srp(); const b = document.querySelector(".scrim .mbody");
+                const n = b && b.querySelector(".needs"); if (n) b.insertBefore(n, b.firstChild); }; },
+      () => { showReport = keep.srp; }],
+    ["a report that drops one thing to do", "the report ends with what needs doing, read from the live save",
+      () => { keep.srp2 = showReport;
+              showReport = function(){ keep.srp2(); const n = document.querySelector(".scrim .needs .need"); if (n) n.remove(); }; },
+      () => { showReport = keep.srp2; }],
+    ["an explainer folded from the first job", "the hurt-risk explainer folds after the first few jobs, and a tap unfolds it",
+      () => { keep.htf = hurtTipFolded; hurtTipFolded = pv => pv.worst > pv.expectedHurt + 0.02; },
+      () => { hurtTipFolded = keep.htf; }],
+    ["opening a job that counts for nothing", "the hurt-risk explainer folds after the first few jobs, and a tap unfolds it",
+      () => { keep.njo = noteJobOpened; noteJobOpened = () => {}; },
+      () => { noteJobOpened = keep.njo; }],
+    // The off-by-one this feature shipped with on its first draft.
+    ["an explainer that folds on its last showing", "the hurt-risk explainer folds after the first few jobs, and a tap unfolds it",
+      () => { keep.htf2 = hurtTipFolded;
+              hurtTipFolded = pv => pv.worst > pv.expectedHurt + 0.02 && uiPrefs.hurtTipSeen >= CONFIG_UI.hurtTipShows; },
+      () => { hurtTipFolded = keep.htf2; }],
+    ["an explainer that never folds", "the hurt-risk explainer folds after the first few jobs, and a tap unfolds it",
+      () => { keep.htf3 = hurtTipFolded; hurtTipFolded = () => false; },
+      () => { hurtTipFolded = keep.htf3; }],
+    ["a folded explainer with no ?", "the hurt-risk explainer folds after the first few jobs, and a tap unfolds it",
+      () => { keep.rd2 = renderDrawer;
+              renderDrawer = q => { const d = keep.rd2(q); const t = d.querySelector("#hurttip"); if (t) t.remove(); return d; }; },
+      () => { renderDrawer = keep.rd2; }],
+    ["a ? that does nothing", "the hurt-risk explainer folds after the first few jobs, and a tap unfolds it",
+      () => { keep.rd3 = renderDrawer;
+              renderDrawer = q => { const d = keep.rd3(q); const t = d.querySelector("#hurttip"); if (t) t.onclick = null; return d; }; },
+      () => { renderDrawer = keep.rd3; }],
+    ["a compact roster that is not compact", "the roster has a compact view, and a recruit with no bed waits below the heroes",
+      () => { keep.rr1 = renderRoster;
+              renderRoster = () => { const c = uiPrefs.compactRoster; uiPrefs.compactRoster = false; keep.rr1(); uiPrefs.compactRoster = c; }; },
+      () => { renderRoster = keep.rr1; }],
+    ["a compact roster that drops someone", "the roster has a compact view, and a recruit with no bed waits below the heroes",
+      () => { keep.rrc2 = renderRoster;
+              renderRoster = () => { keep.rrc2(); const r = [...document.querySelectorAll("#v-roster .hero.compact")].pop(); if (r) r.remove(); }; },
+      () => { renderRoster = keep.rrc2; }],
+    ["a roster toggle that does nothing", "the roster has a compact view, and a recruit with no bed waits below the heroes",
+      () => { keep.rrc3 = renderRoster;
+              renderRoster = () => { keep.rrc3(); const b = document.querySelector("#rostermode"); if (b) b.onclick = () => {}; }; },
+      () => { renderRoster = keep.rrc3; }],
+    ["a recruit with no bed at the top of the roster", "the roster has a compact view, and a recruit with no bed waits below the heroes",
+      () => { keep.cr = canRecruit; canRecruit = d => ({ ok: true, def: d }); },
+      () => { canRecruit = keep.cr; }],
+    ["a recruit with no bed never mentioned", "the roster has a compact view, and a recruit with no bed waits below the heroes",
+      () => { keep.rr4 = renderRoster;
+              renderRoster = () => { keep.rr4(); const w = document.querySelector("#v-roster .offerwait"); if (w) w.remove(); }; },
+      () => { renderRoster = keep.rr4; }],
+    ["a recruit with no bed listed above the heroes", "the roster has a compact view, and a recruit with no bed waits below the heroes",
+      () => { keep.rr5 = renderRoster;
+              renderRoster = () => { keep.rr5(); const v = document.querySelector("#v-roster"), w = v && v.querySelector(".offerwait");
+                if (w) v.insertBefore(w, v.firstChild); }; },
+      () => { renderRoster = keep.rr5; }],
+    ["a job name that lost its apostrophe again", "the authored job names keep their possessives",
+      () => { keep.pn = null;
+              Object.keys(QUEST_POOLS).forEach(t => Object.keys(QUEST_POOLS[t]).forEach(z => (QUEST_POOLS[t][z] || []).forEach(e => {
+                if (!keep.pn && e.name === "The Miller's Cellar"){ keep.pn = e; e.name = "The Millers Cellar"; } }))); },
+      () => { if (keep.pn) keep.pn.name = "The Miller's Cellar"; }],
+    ["a job name that capitalises a small word again", "the authored job names keep one house style",
+      () => { keep.hs1 = null;
+              Object.keys(QUEST_POOLS).forEach(t => Object.keys(QUEST_POOLS[t]).forEach(z => (QUEST_POOLS[t][z] || []).forEach(e => {
+                if (!keep.hs1 && e.name === "The Siege of Kilnfall"){ keep.hs1 = e; e.name = "The Siege Of Kilnfall"; } }))); },
+      () => { if (keep.hs1) keep.hs1.name = "The Siege of Kilnfall"; }],
+    ["a job name that drops a hyphen again", "the authored job names keep one house style",
+      () => { keep.hs2n = null;
+              Object.keys(QUEST_POOLS).forEach(t => Object.keys(QUEST_POOLS[t]).forEach(z => (QUEST_POOLS[t][z] || []).forEach(e => {
+                if (!keep.hs2n && e.name === "Tracking the Ash-Knight"){ keep.hs2n = e; e.name = "Tracking the Ash Knight"; } }))); },
+      () => { if (keep.hs2n) keep.hs2n.name = "Tracking the Ash-Knight"; }],
+    ["kit that drops a hyphen again", "the authored job names keep one house style",
+      () => { keep.hs3 = GEAR_BY_ID["bog-iron-scale-hauberk"]; if (keep.hs3) keep.hs3.name = "Bog Iron Scale Hauberk"; },
+      () => { if (keep.hs3) keep.hs3.name = "Bog-Iron Scale Hauberk"; }],
+    ["a suite that leaves the player's preferences changed", "the suite hands the player back their own screen",
+      () => { keep.rs7 = restoreScreen; keep.up7 = Object.assign({}, uiPrefs);
+              restoreScreen = (s, sw) => { const p = uiPrefs; keep.rs7(s, sw); uiPrefs = p; }; },
+      () => { restoreScreen = keep.rs7; uiPrefs = keep.up7; render(); }]
   ];
 
   const before = assertAll();
@@ -16045,6 +17088,11 @@ function falsify(opts){
       "reads statement order in the source; nothing at runtime can reorder it",
     "running the suite leaves the game untouched":
       "compares the start and end of a single run, so no outside probe can perturb it",
+    "the work on a page comes before the paperwork":
+      "guards the ORDER in which renderZonePanel and renderKeep put their sections on the " +
+      "page. No constant moves a section, and every replaceable function that touches one " +
+      "can only empty it -- which fails the check because the section is missing, not " +
+      "because it is out of order, and would prove the wrong thing",
     "the hurt risk shown is the hurt risk rolled":
       "compares previewQuest against resolveQuest; both read the same constants, so no " +
       "external lever can make them disagree -- only a code change can, which is the point",
@@ -16776,8 +17824,12 @@ function sweepPlay(){
       });
     });
     run("a roster that has taken Tier 3", s => {
+      // Status is left alone. This shape used to set every hero "idle", which
+      // on a save with a party out made a hero idle AND on a quest -- and
+      // benched the Elder into a rider: states no save can reach. It met a
+      // party in the field for the first time on 2026-10-02.
       s.heroes.forEach(h => {
-        h.level = CONFIG.LEVEL_MAX; h.xp = 0; h.status = "idle";
+        h.level = CONFIG.LEVEL_MAX; h.xp = 0;
         const t2 = (CONFIG.SUBCLASSES[h.cls] || [])[0];
         if (!t2) return;
         h.subclass = t2.id;
@@ -17193,6 +18245,7 @@ const BK = {
     try { localStorage.removeItem(CONFIG.SAVE_KEY); } catch (e) {}
     // A fresh game is a fresh game: no passed-on reign waiting to be restored.
     try { localStorage.removeItem(CONFIG.SAVE_BACKUP_KEY); } catch (e) {}
+    try { localStorage.removeItem(CONFIG.UI_PREFS_KEY); } catch (e) {}
     memoryStore = null;
     return "save cleared and saves disarmed -- reload for a fresh game";
   },
